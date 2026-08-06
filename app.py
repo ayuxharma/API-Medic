@@ -1,6 +1,7 @@
 from agent.classifier import FailureClassifier
 from agent.hypothesis import HypothesisGenerator
 from agent.state import AgentState
+from agent.evidence_matcher import EvidenceMatcher
 
 
 def main():
@@ -12,9 +13,11 @@ def main():
 
     classifier = FailureClassifier()
     generator = HypothesisGenerator()
+    matcher = EvidenceMatcher()
 
     state = classifier.classify(state)
     state = generator.generate(state)
+    state = matcher.match(state)
 
     print("\nFailure category:", state["failure_type"])
 
@@ -22,12 +25,19 @@ def main():
     for signal in state["signals"]:
         print("-", signal)
 
-    print("\nPossible causes:")
+    print("\nPossible causes after evidence matching:")
+
     for index, hypothesis in enumerate(state["hypotheses"], start=1):
         print(
             f"{index}. {hypothesis['cause']} "
-            f"(starting score: {hypothesis['score']})"
+            f"(score: {hypothesis['score']})"
         )
+
+        for evidence in hypothesis["supporting_evidence"]:
+            print(f"   + {evidence}")
+
+        for evidence in hypothesis["weakening_evidence"]:
+            print(f"   - {evidence}")
 
 
 if __name__ == "__main__":

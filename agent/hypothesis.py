@@ -17,6 +17,28 @@ class Hypothesis:
     supporting_evidence: List[str] = field(default_factory=list)
     weakening_evidence: List[str] = field(default_factory=list)
 
+    
+    def add_evidence(
+        self ,
+        message: str ,
+        supports : bool ,
+        weight: float ,
+    ) -> None :
+        
+        """
+        Add evidence and adjust the current score
+        supports=True -> score badhega
+        supports=False -> score kam hoga
+        """
+        
+        if supports :
+            self.supporting_evidence.append(message)
+            self.score = min(self.score+weight, 1.0)
+        else :
+            self.weakening_evidence.append(message)
+            self.score = max(self.score-weight, 0.0)
+        
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the Hypothesis object into a normal dictionary.
@@ -28,6 +50,25 @@ class Hypothesis:
             "supporting_evidence": self.supporting_evidence,
             "weakening_evidence": self.weakening_evidence,
         }
+        
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Hypothesis":
+        """
+        Rebuild a Hypothesis object from a dictionary.
+        """
+        
+        return cls (
+            cause = data["cause"] ,
+            category = data["category"] ,
+            score = float(data["score"]) ,
+            supporting_evidence = list(
+                data.get("supporting_evidence", [])
+            ) ,
+            weakening_evidence = list(
+                data.get("weakening_evidence", [])
+            ) ,
+        )
 
 
 class HypothesisGenerator:
