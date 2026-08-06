@@ -15,3 +15,8 @@ class AgentState(TypedDict, total=False):
     
     # Hyothesis result
     hypotheses: List[Dict[str, Any]]
+    
+    # final reasoning result
+    root_cause: str
+    confidence_level: float
+    alternative_causes: List[Dict[str, Any]]
