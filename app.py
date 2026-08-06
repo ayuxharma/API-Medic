@@ -2,6 +2,7 @@ from agent.classifier import FailureClassifier
 from agent.hypothesis import HypothesisGenerator
 from agent.state import AgentState
 from agent.evidence_matcher import EvidenceMatcher
+from agent.eliminator import HypothesisEliminator
 
 
 def main():
@@ -14,10 +15,12 @@ def main():
     classifier = FailureClassifier()
     generator = HypothesisGenerator()
     matcher = EvidenceMatcher()
+    eliminator = HypothesisEliminator()
 
     state = classifier.classify(state)
     state = generator.generate(state)
     state = matcher.match(state)
+    state = eliminator.eliminate(state)
 
     print("\nFailure category:", state["failure_type"])
 
