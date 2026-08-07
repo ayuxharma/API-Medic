@@ -8,6 +8,8 @@ class AgentState(TypedDict, total=False):
     status_code : Optional[str]
     error_message : str
     stack_trace : str
+    endpoint : str
+    method : str
     
     # classsification results
     failure_type : Optional[str]

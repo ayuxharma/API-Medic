@@ -46,7 +46,7 @@ class Hypothesis:
         return {
             "cause": self.cause,
             "category": self.category,
-            "score": self.score,
+            "score": round(self.score, 2) ,
             "supporting_evidence": self.supporting_evidence,
             "weakening_evidence": self.weakening_evidence,
         }
