@@ -20,3 +20,5 @@ class AgentState(TypedDict, total=False):
     root_cause: str
     confidence_level: float
     alternative_causes: List[Dict[str, Any]]
+    
+    suggested_fixes: List[str]

@@ -4,6 +4,7 @@ from agent.evidence_matcher import EvidenceMatcher
 from agent.hypothesis import HypothesisGenerator
 from agent.reasoner import RootCauseReasoner
 from agent.state import AgentState
+from agent.fixer import FixSuggester
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
     matcher = EvidenceMatcher()
     eliminator = HypothesisEliminator()
     reasoner = RootCauseReasoner()
+    fixer = FixSuggester()
 
     # Run the complete pipeline in the correct order.
     state = classifier.classify(state)
@@ -27,6 +29,7 @@ def main():
     state = matcher.match(state)
     state = eliminator.eliminate(state)
     state = reasoner.reason(state)
+    state = fixer.suggest(state)
 
     # Print classification result.
     print("\n" + "=" * 60)
@@ -72,6 +75,11 @@ def main():
             f"(score: {alternative['score']}, "
             f"relative share: {alternative['relative_share']}%)"
         )
+        
+    print("\n Suggested fixes :")
+    
+    for number , fix in enumerate(state["suggested_fixes"], start=1):
+        print(f"{number}. {fix}")
 
     print("\n" + "=" * 60)
 
