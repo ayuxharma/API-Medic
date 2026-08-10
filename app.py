@@ -1,11 +1,6 @@
 import argparse
 
-from agent.classifier import FailureClassifier
-from agent.eliminator import HypothesisEliminator
-from agent.evidence_matcher import EvidenceMatcher
-from agent.fixer import FixSuggester
-from agent.hypothesis import HypothesisGenerator
-from agent.reasoner import RootCauseReasoner
+from agent.workflow import DebuggerWorkflow
 from agent.state import AgentState
 
 
@@ -123,20 +118,9 @@ def print_results(state: AgentState) -> None:
 def main():
     args = parse_arguments()
     state = build_state(args)
-
-    classifier = FailureClassifier()
-    generator = HypothesisGenerator()
-    matcher = EvidenceMatcher()
-    eliminator = HypothesisEliminator()
-    reasoner = RootCauseReasoner()
-    fixer = FixSuggester()
-
-    state = classifier.classify(state)
-    state = generator.generate(state)
-    state = matcher.match(state)
-    state = eliminator.eliminate(state)
-    state = reasoner.reason(state)
-    state = fixer.suggest(state)
+    
+    workflow = DebuggerWorkflow()
+    state = workflow.run(state)
 
     print_results(state)
 

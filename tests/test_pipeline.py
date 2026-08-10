@@ -1,20 +1,9 @@
-from agent.classifier import FailureClassifier
-from agent.eliminator import HypothesisEliminator
-from agent.evidence_matcher import EvidenceMatcher
-from agent.fixer import FixSuggester
-from agent.hypothesis import HypothesisGenerator
-from agent.reasoner import RootCauseReasoner
+from agent.workflow import DebuggerWorkflow
 from agent.state import AgentState
 
-def run_pipeline(state: AgentState) -> AgentState :
-    state = FailureClassifier().classify(state)
-    state = HypothesisGenerator().generate(state)
-    state = EvidenceMatcher().match(state)
-    state = HypothesisEliminator().eliminate(state)
-    state = RootCauseReasoner().reason(state)
-    state = FixSuggester().suggest(state)
-    
-    return state 
+def run_pipeline(state: AgentState) -> AgentState:
+    workflow = DebuggerWorkflow()
+    return workflow.run(state)
 
 def create_state(status_code, error_message, stack_trace="") -> AgentState :
     return {
