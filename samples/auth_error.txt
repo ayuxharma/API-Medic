@@ -1,0 +1,7 @@
+Endpoint: /api/login
+Method: POST
+Status Code: 401
+Error Message:
+JWT token expired
+Stack Trace:
+AuthenticationError: JWT token expired

@@ -1,0 +1,7 @@
+Endpoint: /api/users
+Method: GET
+Status Code: 500
+Error Message:
+Undefined variable user_id
+Stack Trace:
+NameError: user_id is not defined

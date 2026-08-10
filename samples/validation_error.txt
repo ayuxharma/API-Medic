@@ -1,0 +1,7 @@
+Endpoint: /api/users
+Method: POST
+Status Code: 400
+Error Message:
+Required field email is missing
+Stack Trace:
+ValidationError: email is required

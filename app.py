@@ -1,14 +1,32 @@
 import argparse
 
-from agent.workflow import DebuggerWorkflow
+from agent.input_parser import FileInputParser
 from agent.state import AgentState
+from agent.workflow import DebuggerWorkflow
 
 
 def parse_arguments():
-    """Read command-line arguments given by the user."""
-
+    """
+    Define and read command-line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Rule-based API Failure Debugger"
+    )
+
+    # The user must provide either --file or --error,
+    # but cannot provide both at the same time.
+    input_group = parser.add_mutually_exclusive_group(
+        required=True
+    )
+
+    input_group.add_argument(
+        "--file",
+        help="Path to a structured API error file",
+    )
+
+    input_group.add_argument(
+        "--error",
+        help="Error message returned by the API",
     )
 
     parser.add_argument(
@@ -31,12 +49,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--error",
-        required=True,
-        help="Error message returned by the API",
-    )
-
-    parser.add_argument(
         "--stack-trace",
         default="",
         help="Optional stack trace",
@@ -46,8 +58,12 @@ def parse_arguments():
 
 
 def build_state(args) -> AgentState:
-    """Convert CLI arguments into shared application state."""
+    """
+    Convert direct command-line arguments into AgentState.
 
+    This function is used when the user provides --error
+    instead of --file.
+    """
     return {
         "endpoint": args.endpoint,
         "method": args.method.upper(),
@@ -57,9 +73,27 @@ def build_state(args) -> AgentState:
     }
 
 
-def print_results(state: AgentState) -> None:
-    """Print the final debugging report."""
+def load_initial_state(args) -> AgentState:
+    """
+    Select the correct input source.
 
+    File mode:
+        Parse the file using FileInputParser.
+
+    Direct mode:
+        Build state from command-line arguments.
+    """
+    if args.file:
+        file_parser = FileInputParser()
+        return file_parser.parse(args.file)
+
+    return build_state(args)
+
+
+def print_results(state: AgentState) -> None:
+    """
+    Print the complete debugging report.
+    """
     print("\n" + "=" * 60)
     print("API DEBUGGER RESULT")
     print("=" * 60)
@@ -73,57 +107,125 @@ def print_results(state: AgentState) -> None:
     print("-", state["failure_type"])
 
     print("\nClassification signals:")
-    for signal in state["signals"]:
+
+    signals = state.get("signals", [])
+
+    if not signals:
+        print("- No classification signals found")
+
+    for signal in signals:
         print("-", signal)
 
     print("\nAll hypotheses after evidence and elimination:")
 
-    for index, hypothesis in enumerate(state["hypotheses"], start=1):
+    hypotheses = state.get("hypotheses", [])
+
+    if not hypotheses:
+        print("- No hypotheses available")
+
+    for index, hypothesis in enumerate(
+        hypotheses,
+        start=1,
+    ):
         print(
             f"\n{index}. {hypothesis['cause']} "
             f"(score: {hypothesis['score']})"
         )
 
-        for evidence in hypothesis["supporting_evidence"]:
+        supporting_evidence = hypothesis.get(
+            "supporting_evidence",
+            [],
+        )
+
+        weakening_evidence = hypothesis.get(
+            "weakening_evidence",
+            [],
+        )
+
+        for evidence in supporting_evidence:
             print(f"   + {evidence}")
 
-        for evidence in hypothesis["weakening_evidence"]:
+        for evidence in weakening_evidence:
             print(f"   - {evidence}")
 
     print("\n" + "-" * 60)
     print("MOST LIKELY ROOT CAUSE")
-    print("-", state["root_cause"])
-    print("-", f"Evidence score: {state['confidence_score']}")
+
+    print(
+        "-",
+        state.get(
+            "root_cause",
+            "Unable to determine the root cause",
+        ),
+    )
+
+    confidence_score = state.get(
+        "confidence_score",
+        0.0,
+    )
+
+    print("-", f"Evidence score: {confidence_score}")
 
     print("\nAlternative causes:")
 
-    if not state["alternative_causes"]:
+    alternative_causes = state.get(
+        "alternative_causes",
+        [],
+    )
+
+    if not alternative_causes:
         print("- No alternative causes available")
 
-    for alternative in state["alternative_causes"]:
+    for alternative in alternative_causes:
         print(
             f"- {alternative['cause']} "
             f"(score: {alternative['score']}, "
-            f"relative share: {alternative['relative_share']}%)"
+            f"relative share: "
+            f"{alternative['relative_share']}%)"
         )
 
     print("\nSuggested fixes:")
 
-    for number, fix in enumerate(state["suggested_fixes"], start=1):
+    suggested_fixes = state.get(
+        "suggested_fixes",
+        [],
+    )
+
+    if not suggested_fixes:
+        print("- No fix suggestions available")
+
+    for number, fix in enumerate(
+        suggested_fixes,
+        start=1,
+    ):
         print(f"{number}. {fix}")
 
     print("\n" + "=" * 60)
 
 
-def main():
-    args = parse_arguments()
-    state = build_state(args)
-    
-    workflow = DebuggerWorkflow()
-    state = workflow.run(state)
+def main() -> int:
+    """
+    Main application entry point.
 
-    print_results(state)
+    Returns:
+        0 when analysis succeeds.
+        2 when input loading fails.
+    """
+    args = parse_arguments()
+
+    try:
+        state = load_initial_state(args)
+    except (FileNotFoundError, ValueError, OSError) as error:
+        print(f"\nInput error: {error}")
+        return 2
+
+    workflow = DebuggerWorkflow()
+    result = workflow.run(state)
+
+    print_results(result)
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
