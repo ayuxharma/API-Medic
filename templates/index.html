@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>API Failure Debugger</title>
+</head>
+
+<body>
+    <main>
+        <h1>API Failure Debugger</h1>
+
+        <p>
+            Enter the failure details returned by your API.
+            The debugger will classify the failure, rank possible
+            root causes, and suggest fixes.
+        </p>
+
+        <form action="/diagnose" method="post">
+            <div>
+                <label for="endpoint">API endpoint</label>
+                <input
+                    id="endpoint"
+                    name="endpoint"
+                    type="text"
+                    placeholder="/api/login"
+                    value="Not provided"
+                >
+            </div>
+
+            <br>
+
+            <div>
+                <label for="method">HTTP method</label>
+                <select id="method" name="method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+
+            <br>
+
+            <div>
+                <label for="status_code">HTTP status code</label>
+                <input
+                    id="status_code"
+                    name="status_code"
+                    type="number"
+                    min="100"
+                    max="599"
+                    placeholder="401"
+                >
+            </div>
+
+            <br>
+
+            <div>
+                <label for="error_message">Error message</label>
+                <br>
+                <textarea
+                    id="error_message"
+                    name="error_message"
+                    rows="5"
+                    cols="70"
+                    maxlength="10000"
+                    placeholder="JWT token expired"
+                    required
+                ></textarea>
+            </div>
+
+            <br>
+
+            <div>
+                <label for="stack_trace">Stack trace (optional)</label>
+                <br>
+                <textarea
+                    id="stack_trace"
+                    name="stack_trace"
+                    rows="10"
+                    cols="70"
+                    maxlength="50000"
+                    placeholder="Paste the stack trace here"
+                ></textarea>
+            </div>
+
+            <p>
+                Remove passwords, access tokens, API keys, and other
+                sensitive information before submitting.
+            </p>
+
+            <button type="submit">Analyze failure</button>
+        </form>
+
+        <p>
+            Developers can also use the
+            <a href="/docs">JSON API documentation</a>.
+        </p>
+    </main>
+</body>
+</html>

@@ -6,15 +6,14 @@ from web.main import app
 client = TestClient(app)
 
 
-def test_home_route() -> None:
+def test_home_route_displays_form() -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "message": "API Failure Debugger is running",
-        "documentation": "/docs",
-        "health_check": "/health",
-    }
+    assert response.headers["content-type"].startswith("text/html")
+    assert "API Failure Debugger" in response.text
+    assert 'action="/diagnose"' in response.text
+    assert 'name="error_message"' in response.text
 
 
 def test_health_check() -> None:
@@ -72,3 +71,23 @@ def test_diagnose_rejects_empty_error_message() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_html_form_runs_diagnosis() -> None:
+    response = client.post(
+        "/diagnose",
+        data={
+            "endpoint": "/api/login",
+            "method": "POST",
+            "status_code": "401",
+            "error_message": "JWT token expired",
+            "stack_trace": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "API Diagnosis Result" in response.text
+    assert "AUTHENTICATION" in response.text
+    assert "JWT token has expired" in response.text
+    assert "Suggested fixes" in response.text

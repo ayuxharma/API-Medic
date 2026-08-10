@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>Diagnosis Result</title>
+</head>
+
+<body>
+    <main>
+        <h1>API Diagnosis Result</h1>
+
+        <section>
+            <h2>Request details</h2>
+
+            <ul>
+                <li>Endpoint: {{ result.endpoint }}</li>
+                <li>Method: {{ result.method }}</li>
+
+                <li>
+                    Status code:
+                    {% if result.status_code is not none %}
+                        {{ result.status_code }}
+                    {% else %}
+                        Not provided
+                    {% endif %}
+                </li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Failure category</h2>
+            <p>{{ result.failure_type }}</p>
+        </section>
+
+        <section>
+            <h2>Classification signals</h2>
+
+            {% if result.signals %}
+                <ul>
+                    {% for signal in result.signals %}
+                        <li>{{ signal }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No classification signals were found.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Most likely root cause</h2>
+
+            <p>
+                <strong>{{ result.root_cause }}</strong>
+            </p>
+
+            <p>
+                Evidence score:
+                {{ (result.confidence_score * 100) | round(0) }}%
+            </p>
+        </section>
+
+        <section>
+            <h2>Ranked hypotheses</h2>
+
+            <ol>
+                {% for hypothesis in result.hypotheses %}
+                    <li>
+                        <p>
+                            <strong>{{ hypothesis.cause }}</strong>
+                            — score: {{ hypothesis.score }}
+                        </p>
+
+                        {% if hypothesis.supporting_evidence %}
+                            <p>Supporting evidence:</p>
+
+                            <ul>
+                                {% for evidence in hypothesis.supporting_evidence %}
+                                    <li>{{ evidence }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if hypothesis.weakening_evidence %}
+                            <p>Weakening evidence:</p>
+
+                            <ul>
+                                {% for evidence in hypothesis.weakening_evidence %}
+                                    <li>{{ evidence }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section>
+            <h2>Alternative causes</h2>
+
+            {% if result.alternative_causes %}
+                <ul>
+                    {% for alternative in result.alternative_causes %}
+                        <li>
+                            {{ alternative.cause }}
+                            — score: {{ alternative.score }},
+                            relative share: {{ alternative.relative_share }}%
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No alternative causes are available.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Suggested fixes</h2>
+
+            <ol>
+                {% for fix in result.suggested_fixes %}
+                    <li>{{ fix }}</li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <p>
+            <a href="/">Analyze another failure</a>
+        </p>
+    </main>
+</body>
+</html>

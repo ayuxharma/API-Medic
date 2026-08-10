@@ -1,8 +1,20 @@
-from fastapi import FastAPI
+from pathlib import Path
+from typing import Annotated
 
-from agent.state import AgentState
-from agent.workflow import DebuggerWorkflow
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
 from web.schemas import DiagnosisRequest, DiagnosisResponse
+from web.services import run_diagnosis
+
+
+BASE_DIRECTORY = Path(__file__).resolve().parent.parent
+TEMPLATES_DIRECTORY = BASE_DIRECTORY / "templates"
+
+templates = Jinja2Templates(
+    directory=str(TEMPLATES_DIRECTORY),
+)
 
 
 app = FastAPI(
@@ -14,21 +26,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
-workflow = DebuggerWorkflow()
 
-
-@app.get("/")
-def home() -> dict[str, str]:
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request) -> HTMLResponse:
     """
-    Return basic information about the application.
-
-    This route will later be replaced by the HTML debugging form.
+    Display the browser-based API debugging form.
     """
-    return {
-        "message": "API Failure Debugger is running",
-        "documentation": "/docs",
-        "health_check": "/health",
-    }
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={},
+    )
 
 
 @app.get("/health")
@@ -41,7 +49,6 @@ def health_check() -> dict[str, str]:
     }
 
 
-
 @app.post(
     "/api/diagnose",
     response_model=DiagnosisResponse,
@@ -50,17 +57,26 @@ def diagnose_api_failure(
     payload: DiagnosisRequest,
 ) -> DiagnosisResponse:
     """
-    Analyze an API failure and return the debugging result.
+    Accept JSON input and return a JSON diagnosis.
+    """
+    return run_diagnosis(payload)
+
+
+@app.post("/diagnose", response_class=HTMLResponse)
+def diagnose_from_form(
+    request: Request,
+    payload: Annotated[DiagnosisRequest, Form()],
+) -> HTMLResponse:
+    """
+    Accept browser form input and display an HTML diagnosis.
     """
 
-    initial_state: AgentState = {
-        "endpoint": payload.endpoint,
-        "method": payload.method,
-        "status_code": payload.status_code,
-        "error_message": payload.error_message,
-        "stack_trace": payload.stack_trace,
-    }
+    result = run_diagnosis(payload)
 
-    result = workflow.run(initial_state)
-
-    return DiagnosisResponse.model_validate(result)
+    return templates.TemplateResponse(
+        request=request,
+        name="result.html",
+        context={
+            "result": result,
+        },
+    )
