@@ -1,0 +1,52 @@
+from agent.classifier import FailureClassifier
+from agent.state import AgentState
+
+def create_state(status_code , error_message ,stack_trace = "") -> AgentState :
+    return {
+        "endpoint" : "/api/test" ,
+        "method" : "GET" ,
+        "status_code" : status_code ,
+        "error_message" : error_message ,
+        "stack_trace" : stack_trace ,
+    }
+    
+def test_authentication_classification() :
+    state = create_state(401, "JWT token expired")
+    
+    result = FailureClassifier().classify(state)
+    
+    assert result["failure_type"] == "AUTHENTICATION"
+    assert len(result["signals"]) > 0
+    
+def test_validation_classification():
+    state = create_state(
+        400,
+        "Required field email is missing",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert result["failure_type"] == "VALIDATION"
+
+
+def test_server_error_classification():
+    state = create_state(
+        500,
+        "Undefined variable user_id",
+        "Traceback: user_id is not defined",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert result["failure_type"] == "SERVER_ERROR"
+
+
+def test_unknown_classification():
+    state = create_state(
+        None,
+        "Something unexpected happened",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert result["failure_type"] == "UNKNOWN"
