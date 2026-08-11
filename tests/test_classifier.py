@@ -1,23 +1,26 @@
 from agent.classifier import FailureClassifier
 from agent.state import AgentState
 
-def create_state(status_code , error_message ,stack_trace = "") -> AgentState :
+
+def create_state(status_code, error_message, stack_trace="") -> AgentState:
     return {
-        "endpoint" : "/api/test" ,
-        "method" : "GET" ,
-        "status_code" : status_code ,
-        "error_message" : error_message ,
-        "stack_trace" : stack_trace ,
+        "endpoint": "/api/test",
+        "method": "GET",
+        "status_code": status_code,
+        "error_message": error_message,
+        "stack_trace": stack_trace,
     }
-    
-def test_authentication_classification() :
+
+
+def test_authentication_classification():
     state = create_state(401, "JWT token expired")
-    
+
     result = FailureClassifier().classify(state)
-    
+
     assert result["failure_type"] == "AUTHENTICATION"
     assert len(result["signals"]) > 0
-    
+
+
 def test_validation_classification():
     state = create_state(
         400,
@@ -39,7 +42,8 @@ def test_server_error_classification():
     result = FailureClassifier().classify(state)
 
     assert result["failure_type"] == "SERVER_ERROR"
-    
+
+
 def test_authorization_classification() -> None:
     state = create_state(
         403,
@@ -49,10 +53,7 @@ def test_authorization_classification() -> None:
     result = FailureClassifier().classify(state)
 
     assert result["failure_type"] == "AUTHORIZATION"
-    assert any(
-        "HTTP 403" in signal
-        for signal in result["signals"]
-    )
+    assert any("HTTP 403" in signal for signal in result["signals"])
 
 
 def test_unknown_classification():
@@ -64,7 +65,8 @@ def test_unknown_classification():
     result = FailureClassifier().classify(state)
 
     assert result["failure_type"] == "UNKNOWN"
-    
+
+
 def test_database_classification() -> None:
     state = create_state(
         500,
@@ -76,10 +78,9 @@ def test_database_classification() -> None:
     assert result["failure_type"] == "DATABASE"
 
     assert any(
-        "strong database signal" in signal.lower()
-        for signal in result["signals"]
+        "strong database signal" in signal.lower() for signal in result["signals"]
     )
-    
+
 
 def test_database_concurrency_classification() -> None:
     state = create_state(
@@ -89,11 +90,8 @@ def test_database_concurrency_classification() -> None:
 
     result = FailureClassifier().classify(state)
 
-    assert (
-        result["failure_type"] == "DATABASE_CONCURRENCY"
-    )
+    assert result["failure_type"] == "DATABASE_CONCURRENCY"
 
     assert any(
-        "database-concurrency signal" in signal.lower()
-        for signal in result["signals"]
+        "database-concurrency signal" in signal.lower() for signal in result["signals"]
     )

@@ -109,7 +109,7 @@ class EvidenceMatcher:
                 r"|(?:could not|cannot|failed to).*connect.*"
                 r"(database|postgres|postgresql|mysql)"
                 r"|too many connections"
-        ),
+            ),
             "cause": "Database connection is unavailable",
             "message": "Database-connection failure wording was found",
             "weight": 0.30,
@@ -122,63 +122,59 @@ class EvidenceMatcher:
                 r"|foreign key constraint"
                 r"|integrityerror"
                 r"|not-null constraint"
-    ),
+            ),
             "cause": "Database constraint was violated",
             "message": "Database-constraint violation wording was found",
             "weight": 0.30,
-},
-{
+        },
+        {
             "pattern": (
                 r"sql syntax"
                 r"|syntax error.*(sql|query|at or near)"
                 r"|query.*(failed|error)"
                 r"|operationalerror"
                 r"|programmingerror"
-    ),
+            ),
             "cause": "Database query execution failed",
             "message": "Database-query failure wording was found",
             "weight": 0.30,
-},
-{
-    "pattern": (
-        r"deadlock detected"
-        r"|deadlock found"
-        r"|deadlock victim"
-        r"|deadlock"
-    ),
-    "cause": "Database deadlock occurred",
-    "message": "Database-deadlock wording was found",
-    "weight": 0.30,
-},
-{
-    "pattern": (
-        r"lock wait timeout"
-        r"|lock acquisition.*timeout"
-        r"|could not obtain lock"
-        r"|database is locked"
-    ),
-    "cause": "Database lock wait timed out",
-    "message": "Database lock-timeout wording was found",
-    "weight": 0.30,
-},
-{
-    "pattern": (
-        r"could not serialize access"
-        r"|serialization failure"
-        r"|concurrent update"
-        r"|optimistic lock"
-        r"|stale object"
-        r"|staleobjectstate"
-        r"|version conflict"
-    ),
-    "cause": (
-        "Transaction serialization conflict occurred"
-    ),
-    "message": (
-        "Concurrent-transaction conflict wording was found"
-    ),
-    "weight": 0.30,
-},
+        },
+        {
+            "pattern": (
+                r"deadlock detected"
+                r"|deadlock found"
+                r"|deadlock victim"
+                r"|deadlock"
+            ),
+            "cause": "Database deadlock occurred",
+            "message": "Database-deadlock wording was found",
+            "weight": 0.30,
+        },
+        {
+            "pattern": (
+                r"lock wait timeout"
+                r"|lock acquisition.*timeout"
+                r"|could not obtain lock"
+                r"|database is locked"
+            ),
+            "cause": "Database lock wait timed out",
+            "message": "Database lock-timeout wording was found",
+            "weight": 0.30,
+        },
+        {
+            "pattern": (
+                r"could not serialize access"
+                r"|serialization failure"
+                r"|concurrent update"
+                r"|optimistic lock"
+                r"|stale object"
+                r"|staleobjectstate"
+                r"|version conflict"
+            ),
+            "cause": ("Transaction serialization conflict occurred"),
+            "message": ("Concurrent-transaction conflict wording was found"),
+            "weight": 0.30,
+        },
     ]
 
     def match(self, state: AgentState) -> AgentState:
@@ -192,14 +188,10 @@ class EvidenceMatcher:
         text_to_check = f"{error_message} {stack_trace}"
 
         hypotheses = [
-            Hypothesis.from_dict(data)
-            for data in state.get("hypotheses", [])
+            Hypothesis.from_dict(data) for data in state.get("hypotheses", [])
         ]
 
-        available_causes = {
-            hypothesis.cause
-            for hypothesis in hypotheses
-        }
+        available_causes = {hypothesis.cause for hypothesis in hypotheses}
 
         for rule in self.EVIDENCE_RULES:
             # Skip rules belonging to a different failure category.
@@ -224,10 +216,7 @@ class EvidenceMatcher:
                     )
                 else:
                     hypothesis.add_evidence(
-                        message=(
-                            f"Evidence supports "
-                            f"'{rule['cause']}' instead"
-                        ),
+                        message=(f"Evidence supports '{rule['cause']}' instead"),
                         supports=False,
                         weight=0.15,
                     )
@@ -237,9 +226,6 @@ class EvidenceMatcher:
             reverse=True,
         )
 
-        state["hypotheses"] = [
-            hypothesis.to_dict()
-            for hypothesis in hypotheses
-        ]
+        state["hypotheses"] = [hypothesis.to_dict() for hypothesis in hypotheses]
 
         return state

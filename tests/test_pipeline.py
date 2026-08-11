@@ -1,46 +1,47 @@
-from agent.workflow import DebuggerWorkflow
 from agent.state import AgentState
+from agent.workflow import DebuggerWorkflow
+
 
 def run_pipeline(state: AgentState) -> AgentState:
     workflow = DebuggerWorkflow()
     return workflow.run(state)
 
-def create_state(status_code, error_message, stack_trace="") -> AgentState :
+
+def create_state(status_code, error_message, stack_trace="") -> AgentState:
     return {
-        "endpoint" : "/api/test" ,
-        "method" : "POST" ,
-        "status_code" : status_code ,
-        "error_message" : error_message ,
-        "stack_trace" : stack_trace ,
+        "endpoint": "/api/test",
+        "method": "POST",
+        "status_code": status_code,
+        "error_message": error_message,
+        "stack_trace": stack_trace,
     }
-    
-def test_expired_jwt_pipeline() :
+
+
+def test_expired_jwt_pipeline():
     state = create_state(401, "JWT token expired")
-    result = run_pipeline(state) 
-    
+    result = run_pipeline(state)
+
     assert result["failure_type"] == "AUTHENTICATION"
     assert result["root_cause"] == "JWT token has expired"
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
-    
+
     primary = result["hypotheses"][0]
-    
+
     assert primary["cause"] == "JWT token has expired"
     assert len(primary["supporting_evidence"]) > 0
-    
 
-def test_missing_field_pipeline() :
+
+def test_missing_field_pipeline():
     state = create_state(
-        400 , 
-        "Required field is missing" ,
+        400,
+        "Required field is missing",
     )
-    
-    result = run_pipeline(state) 
-    
+
+    result = run_pipeline(state)
+
     assert result["failure_type"] == "VALIDATION"
-    assert result["root_cause"] == (
-        "Required field is missing from request"
-    )
+    assert result["root_cause"] == ("Required field is missing from request")
     assert len(result["suggested_fixes"]) > 0
 
 
@@ -54,10 +55,9 @@ def test_undefined_variable_pipeline():
     result = run_pipeline(state)
 
     assert result["failure_type"] == "SERVER_ERROR"
-    assert result["root_cause"] == (
-        "Undefined variable or method call"
-    )
-    
+    assert result["root_cause"] == ("Undefined variable or method call")
+
+
 def test_permission_denied_pipeline() -> None:
     state = create_state(
         403,
@@ -67,17 +67,13 @@ def test_permission_denied_pipeline() -> None:
     result = run_pipeline(state)
 
     assert result["failure_type"] == "AUTHORIZATION"
-    assert result["root_cause"] == (
-        "User lacks required permission"
-    )
+    assert result["root_cause"] == ("User lacks required permission")
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
 
     primary = result["hypotheses"][0]
 
-    assert primary["cause"] == (
-        "User lacks required permission"
-    )
+    assert primary["cause"] == ("User lacks required permission")
     assert len(primary["supporting_evidence"]) > 0
 
 
@@ -94,7 +90,8 @@ def test_unknown_error_pipeline():
         "Insufficient information to identify the root cause"
     )
     assert len(result["suggested_fixes"]) > 0
-    
+
+
 def test_unrelated_evidence_does_not_reduce_authentication_score() -> None:
     state = create_state(
         401,
@@ -113,7 +110,8 @@ def test_unrelated_evidence_does_not_reduce_authentication_score() -> None:
         "User lacks required permission" not in evidence
         for evidence in primary["weakening_evidence"]
     )
-    
+
+
 def test_database_connection_failure_pipeline() -> None:
     state = create_state(
         500,
@@ -123,19 +121,16 @@ def test_database_connection_failure_pipeline() -> None:
     result = run_pipeline(state)
 
     assert result["failure_type"] == "DATABASE"
-    assert result["root_cause"] == (
-        "Database connection is unavailable"
-    )
+    assert result["root_cause"] == ("Database connection is unavailable")
     assert result["confidence_score"] >= 0.9
     assert len(result["suggested_fixes"]) > 0
 
     primary = result["hypotheses"][0]
 
-    assert primary["cause"] == (
-        "Database connection is unavailable"
-    )
+    assert primary["cause"] == ("Database connection is unavailable")
     assert len(primary["supporting_evidence"]) > 0
-    
+
+
 def test_database_constraint_failure_pipeline() -> None:
     state = create_state(
         409,
@@ -145,12 +140,11 @@ def test_database_constraint_failure_pipeline() -> None:
     result = run_pipeline(state)
 
     assert result["failure_type"] == "DATABASE"
-    assert result["root_cause"] == (
-        "Database constraint was violated"
-    )
+    assert result["root_cause"] == ("Database constraint was violated")
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
-    
+
+
 def test_database_query_failure_pipeline() -> None:
     state = create_state(
         500,
@@ -160,12 +154,11 @@ def test_database_query_failure_pipeline() -> None:
     result = run_pipeline(state)
 
     assert result["failure_type"] == "DATABASE"
-    assert result["root_cause"] == (
-        "Database query execution failed"
-    )
+    assert result["root_cause"] == ("Database query execution failed")
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
-    
+
+
 def test_database_deadlock_pipeline() -> None:
     state = create_state(
         500,
@@ -174,19 +167,14 @@ def test_database_deadlock_pipeline() -> None:
 
     result = run_pipeline(state)
 
-    assert (
-        result["failure_type"]
-        == "DATABASE_CONCURRENCY"
-    )
+    assert result["failure_type"] == "DATABASE_CONCURRENCY"
 
-    assert result["root_cause"] == (
-        "Database deadlock occurred"
-    )
+    assert result["root_cause"] == ("Database deadlock occurred")
 
     assert result["confidence_score"] >= 0.9
     assert len(result["suggested_fixes"]) > 0
-    
-    
+
+
 def test_database_lock_timeout_pipeline() -> None:
     state = create_state(
         503,
@@ -195,18 +183,14 @@ def test_database_lock_timeout_pipeline() -> None:
 
     result = run_pipeline(state)
 
-    assert (
-        result["failure_type"]
-        == "DATABASE_CONCURRENCY"
-    )
+    assert result["failure_type"] == "DATABASE_CONCURRENCY"
 
-    assert result["root_cause"] == (
-        "Database lock wait timed out"
-    )
+    assert result["root_cause"] == ("Database lock wait timed out")
 
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
-    
+
+
 def test_transaction_serialization_conflict_pipeline() -> None:
     state = create_state(
         409,
@@ -215,14 +199,9 @@ def test_transaction_serialization_conflict_pipeline() -> None:
 
     result = run_pipeline(state)
 
-    assert (
-        result["failure_type"]
-        == "DATABASE_CONCURRENCY"
-    )
+    assert result["failure_type"] == "DATABASE_CONCURRENCY"
 
-    assert result["root_cause"] == (
-        "Transaction serialization conflict occurred"
-    )
+    assert result["root_cause"] == ("Transaction serialization conflict occurred")
 
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0

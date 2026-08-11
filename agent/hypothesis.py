@@ -15,13 +15,9 @@ class Hypothesis:
     category: str
     score: float
 
-    supporting_evidence: list[str] = field(
-        default_factory=list
-    )
+    supporting_evidence: list[str] = field(default_factory=list)
 
-    weakening_evidence: list[str] = field(
-        default_factory=list
-    )
+    weakening_evidence: list[str] = field(default_factory=list)
 
     def add_evidence(
         self,
@@ -58,12 +54,8 @@ class Hypothesis:
             "cause": self.cause,
             "category": self.category,
             "score": round(self.score, 2),
-            "supporting_evidence": list(
-                self.supporting_evidence
-            ),
-            "weakening_evidence": list(
-                self.weakening_evidence
-            ),
+            "supporting_evidence": list(self.supporting_evidence),
+            "weakening_evidence": list(self.weakening_evidence),
         }
 
     @classmethod
@@ -79,12 +71,8 @@ class Hypothesis:
             cause=data["cause"],
             category=data["category"],
             score=float(data["score"]),
-            supporting_evidence=list(
-                data.get("supporting_evidence", [])
-            ),
-            weakening_evidence=list(
-                data.get("weakening_evidence", [])
-            ),
+            supporting_evidence=list(data.get("supporting_evidence", [])),
+            weakening_evidence=list(data.get("weakening_evidence", [])),
         )
 
 
@@ -122,9 +110,6 @@ class HypothesisGenerator:
             reverse=True,
         )
 
-        state["hypotheses"] = [
-            hypothesis.to_dict()
-            for hypothesis in hypotheses
-        ]
+        state["hypotheses"] = [hypothesis.to_dict() for hypothesis in hypotheses]
 
         return state

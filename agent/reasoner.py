@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from .state import AgentState
 
@@ -9,7 +9,7 @@ class RootCauseReasoner:
     """
 
     def reason(self, state: AgentState) -> AgentState:
-        hypotheses: List[Dict[str, Any]] = state.get(
+        hypotheses: list[dict[str, Any]] = state.get(
             "hypotheses",
             [],
         )
@@ -32,10 +32,7 @@ class RootCauseReasoner:
         state["root_cause"] = primary["cause"]
         state["confidence_score"] = primary["score"]
 
-        total_score = sum(
-            hypothesis["score"]
-            for hypothesis in hypotheses
-        )
+        total_score = sum(hypothesis["score"] for hypothesis in hypotheses)
 
         alternatives = []
 

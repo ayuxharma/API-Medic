@@ -16,7 +16,6 @@ from agent.input_parser import FileInputParser
 from web.schemas import DiagnosisRequest, DiagnosisResponse
 from web.services import run_diagnosis
 
-
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
 TEMPLATES_DIRECTORY = BASE_DIRECTORY / "templates"
 
@@ -112,9 +111,7 @@ async def diagnose_from_uploaded_file(
     """
 
     try:
-        uploaded_content = await file.read(
-            MAX_UPLOAD_SIZE + 1
-        )
+        uploaded_content = await file.read(MAX_UPLOAD_SIZE + 1)
     finally:
         await file.close()
 
@@ -133,9 +130,7 @@ async def diagnose_from_uploaded_file(
 
         parsed_state = file_parser.parse_text(text_content)
 
-        payload = DiagnosisRequest.model_validate(
-            parsed_state
-        )
+        payload = DiagnosisRequest.model_validate(parsed_state)
 
         result = run_diagnosis(payload)
 
@@ -144,9 +139,7 @@ async def diagnose_from_uploaded_file(
             request=request,
             name="index.html",
             context={
-                "error": (
-                    "Uploaded file must contain valid UTF-8 text."
-                ),
+                "error": ("Uploaded file must contain valid UTF-8 text."),
             },
             status_code=400,
         )

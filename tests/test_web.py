@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from web.main import app
 
-
 client = TestClient(app)
 
 
@@ -159,7 +158,8 @@ def test_upload_rejects_large_file() -> None:
 
     assert response.status_code == 413
     assert "100 KB or smaller" in response.text
-    
+
+
 def test_api_diagnoses_authorization_failure() -> None:
     response = client.post(
         "/api/diagnose",
@@ -167,9 +167,7 @@ def test_api_diagnoses_authorization_failure() -> None:
             "endpoint": "/api/admin/users",
             "method": "DELETE",
             "status_code": 403,
-            "error_message": (
-                "Permission denied for this resource"
-            ),
+            "error_message": ("Permission denied for this resource"),
             "stack_trace": "",
         },
     )
@@ -179,12 +177,10 @@ def test_api_diagnoses_authorization_failure() -> None:
     result = response.json()
 
     assert result["failure_type"] == "AUTHORIZATION"
-    assert result["root_cause"] == (
-        "User lacks required permission"
-    )
+    assert result["root_cause"] == ("User lacks required permission")
     assert len(result["suggested_fixes"]) > 0
-    
-    
+
+
 def test_api_diagnoses_database_failure() -> None:
     response = client.post(
         "/api/diagnose",
@@ -202,12 +198,10 @@ def test_api_diagnoses_database_failure() -> None:
     result = response.json()
 
     assert result["failure_type"] == "DATABASE"
-    assert result["root_cause"] == (
-        "Database connection is unavailable"
-    )
+    assert result["root_cause"] == ("Database connection is unavailable")
     assert len(result["suggested_fixes"]) > 0
-    
-    
+
+
 def test_api_diagnoses_database_deadlock() -> None:
     response = client.post(
         "/api/diagnose",
@@ -215,9 +209,7 @@ def test_api_diagnoses_database_deadlock() -> None:
             "endpoint": "/api/orders",
             "method": "POST",
             "status_code": 500,
-            "error_message": (
-                "Deadlock detected while waiting for transaction"
-            ),
+            "error_message": ("Deadlock detected while waiting for transaction"),
             "stack_trace": "",
         },
     )
@@ -226,13 +218,8 @@ def test_api_diagnoses_database_deadlock() -> None:
 
     result = response.json()
 
-    assert (
-        result["failure_type"]
-        == "DATABASE_CONCURRENCY"
-    )
+    assert result["failure_type"] == "DATABASE_CONCURRENCY"
 
-    assert result["root_cause"] == (
-        "Database deadlock occurred"
-    )
+    assert result["root_cause"] == ("Database deadlock occurred")
 
     assert len(result["suggested_fixes"]) > 0

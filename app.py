@@ -9,15 +9,11 @@ def parse_arguments():
     """
     Define and read command-line arguments.
     """
-    parser = argparse.ArgumentParser(
-        description="Rule-based API Failure Debugger"
-    )
+    parser = argparse.ArgumentParser(description="Rule-based API Failure Debugger")
 
     # The user must provide either --file or --error,
     # but cannot provide both at the same time.
-    input_group = parser.add_mutually_exclusive_group(
-        required=True
-    )
+    input_group = parser.add_mutually_exclusive_group(required=True)
 
     input_group.add_argument(
         "--file",
@@ -127,10 +123,7 @@ def print_results(state: AgentState) -> None:
         hypotheses,
         start=1,
     ):
-        print(
-            f"\n{index}. {hypothesis['cause']} "
-            f"(score: {hypothesis['score']})"
-        )
+        print(f"\n{index}. {hypothesis['cause']} (score: {hypothesis['score']})")
 
         supporting_evidence = hypothesis.get(
             "supporting_evidence",

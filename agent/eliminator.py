@@ -3,6 +3,7 @@ import re
 from .hypothesis import Hypothesis
 from .state import AgentState
 
+
 class HypothesisEliminator:
     """
     Reduces the score of hypotheses whose expected evidence is absent.
@@ -55,149 +56,132 @@ class HypothesisEliminator:
             "penalty": 0.10,
         },
         "User lacks required permission": {
-    "pattern": (
-        r"permission.*(denied|missing|required|insufficient)"
-        r"|(?:denied|missing|insufficient).*permission"
-        r"|access denied"
-    ),
-    "message": "No permission-denial wording was found",
-    "penalty": 0.10,
-},
-"Token has insufficient scope": {
-    "pattern": (
-        r"insufficient.*scope"
-        r"|scope.*(missing|required|insufficient)"
-    ),
-    "message": "No insufficient-scope wording was found",
-    "penalty": 0.10,
-},
-"User role is not allowed for this resource": {
-    "pattern": (
-        r"role.*(required|forbidden|denied|not allowed)"
-        r"|(?:required|forbidden).*role"
-    ),
-    "message": "No role-based access wording was found",
-    "penalty": 0.10,
-},
-"Database connection is unavailable": {
-    "pattern": (
-        r"database.*connection.*"
-        r"(refused|failed|timeout|unavailable)"
-        r"|(?:could not|cannot|failed to).*connect.*"
-        r"(database|postgres|postgresql|mysql)"
-        r"|too many connections"
-    ),
-    "message": (
-        "No database-connection failure wording was found"
-    ),
-    "penalty": 0.10,
-},
-"Database constraint was violated": {
-    "pattern": (
-        r"duplicate key"
-        r"|unique constraint"
-        r"|unique violation"
-        r"|foreign key constraint"
-        r"|integrityerror"
-        r"|not-null constraint"
-    ),
-    "message": (
-        "No database-constraint violation wording was found"
-    ),
-    "penalty": 0.10,
-},
-"Database query execution failed": {
-    "pattern": (
-        r"sql syntax"
-        r"|syntax error.*(sql|query|at or near)"
-        r"|query.*(failed|error)"
-        r"|operationalerror"
-        r"|programmingerror"
-    ),
-    "message": (
-        "No database-query failure wording was found"
-    ),
-    "penalty": 0.10,
-},
-"Database deadlock occurred": {
-    "pattern": (
-        r"deadlock detected"
-        r"|deadlock found"
-        r"|deadlock victim"
-        r"|deadlock"
-    ),
-    "message": "No database-deadlock wording was found",
-    "penalty": 0.10,
-},
-"Database lock wait timed out": {
-    "pattern": (
-        r"lock wait timeout"
-        r"|lock acquisition.*timeout"
-        r"|could not obtain lock"
-        r"|database is locked"
-    ),
-    "message": (
-        "No database lock-timeout wording was found"
-    ),
-    "penalty": 0.10,
-},
-"Transaction serialization conflict occurred": {
-    "pattern": (
-        r"could not serialize access"
-        r"|serialization failure"
-        r"|concurrent update"
-        r"|optimistic lock"
-        r"|stale object"
-        r"|staleobjectstate"
-        r"|version conflict"
-    ),
-    "message": (
-        "No concurrent-transaction conflict wording was found"
-    ),
-    "penalty": 0.10,
-},
+            "pattern": (
+                r"permission.*(denied|missing|required|insufficient)"
+                r"|(?:denied|missing|insufficient).*permission"
+                r"|access denied"
+            ),
+            "message": "No permission-denial wording was found",
+            "penalty": 0.10,
+        },
+        "Token has insufficient scope": {
+            "pattern": (
+                r"insufficient.*scope"
+                r"|scope.*(missing|required|insufficient)"
+            ),
+            "message": "No insufficient-scope wording was found",
+            "penalty": 0.10,
+        },
+        "User role is not allowed for this resource": {
+            "pattern": (
+                r"role.*(required|forbidden|denied|not allowed)"
+                r"|(?:required|forbidden).*role"
+            ),
+            "message": "No role-based access wording was found",
+            "penalty": 0.10,
+        },
+        "Database connection is unavailable": {
+            "pattern": (
+                r"database.*connection.*"
+                r"(refused|failed|timeout|unavailable)"
+                r"|(?:could not|cannot|failed to).*connect.*"
+                r"(database|postgres|postgresql|mysql)"
+                r"|too many connections"
+            ),
+            "message": ("No database-connection failure wording was found"),
+            "penalty": 0.10,
+        },
+        "Database constraint was violated": {
+            "pattern": (
+                r"duplicate key"
+                r"|unique constraint"
+                r"|unique violation"
+                r"|foreign key constraint"
+                r"|integrityerror"
+                r"|not-null constraint"
+            ),
+            "message": ("No database-constraint violation wording was found"),
+            "penalty": 0.10,
+        },
+        "Database query execution failed": {
+            "pattern": (
+                r"sql syntax"
+                r"|syntax error.*(sql|query|at or near)"
+                r"|query.*(failed|error)"
+                r"|operationalerror"
+                r"|programmingerror"
+            ),
+            "message": ("No database-query failure wording was found"),
+            "penalty": 0.10,
+        },
+        "Database deadlock occurred": {
+            "pattern": (
+                r"deadlock detected"
+                r"|deadlock found"
+                r"|deadlock victim"
+                r"|deadlock"
+            ),
+            "message": "No database-deadlock wording was found",
+            "penalty": 0.10,
+        },
+        "Database lock wait timed out": {
+            "pattern": (
+                r"lock wait timeout"
+                r"|lock acquisition.*timeout"
+                r"|could not obtain lock"
+                r"|database is locked"
+            ),
+            "message": ("No database lock-timeout wording was found"),
+            "penalty": 0.10,
+        },
+        "Transaction serialization conflict occurred": {
+            "pattern": (
+                r"could not serialize access"
+                r"|serialization failure"
+                r"|concurrent update"
+                r"|optimistic lock"
+                r"|stale object"
+                r"|staleobjectstate"
+                r"|version conflict"
+            ),
+            "message": ("No concurrent-transaction conflict wording was found"),
+            "penalty": 0.10,
+        },
     }
-    
-    def eliminate (self, state: AgentState) -> AgentState:
+
+    def eliminate(self, state: AgentState) -> AgentState:
         """
         Apply soft-elimination rules to existing hypotheses.
         """
-        
-        error_message = (state.get("error_message") or "")
-        stack_trace = (state.get("stack_trace") or "")
+
+        error_message = state.get("error_message") or ""
+        stack_trace = state.get("stack_trace") or ""
         text_to_check = f"{error_message} {stack_trace}"
-        
+
         hypotheses = [
-            Hypothesis.from_dict(data)
-            for data in state.get("hypotheses", [])
+            Hypothesis.from_dict(data) for data in state.get("hypotheses", [])
         ]
-        
+
         for hypothesis in hypotheses:
             rule = self.ELIMINATION_RULES.get(hypothesis.cause)
-            
+
             # some generic hypotheses may not need elimination rules
             if rule is None:
                 continue
-            
-            evidence_found = re.search(
-                rule["pattern"], 
-                text_to_check, 
-                re.IGNORECASE)
-            
+
+            evidence_found = re.search(rule["pattern"], text_to_check, re.IGNORECASE)
+
             if not evidence_found:
                 hypothesis.add_evidence(
-                    message = rule["message"] ,
-                    supports=False ,
-                    weight = rule["penalty"] ,
+                    message=rule["message"],
+                    supports=False,
+                    weight=rule["penalty"],
                 )
         hypotheses.sort(
             key=lambda hypothesis: hypothesis.score,
             reverse=True,
         )
 
-        state["hypotheses"] = [
-            hypothesis.to_dict()
-            for hypothesis in hypotheses
-        ]
+        state["hypotheses"] = [hypothesis.to_dict() for hypothesis in hypotheses]
 
         return state

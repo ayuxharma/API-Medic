@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 AUTHENTICATION = "AUTHENTICATION"
 AUTHORIZATION = "AUTHORIZATION"
 VALIDATION = "VALIDATION"
@@ -286,9 +285,7 @@ HYPOTHESIS_EVALUATION_RULES: dict[
             r"|missing.*(authorization|auth)"
         ),
         supporting_message="Authorization-header absence was found",
-        weakening_message=(
-            "No missing Authorization-header wording was found"
-        ),
+        weakening_message=("No missing Authorization-header wording was found"),
         fixes=(
             "Send an Authorization header with the request.",
             "Use the format: Bearer <token>.",
@@ -420,9 +417,7 @@ HYPOTHESIS_EVALUATION_RULES: dict[
             r"|too many connections"
         ),
         supporting_message="Database-connection failure wording was found",
-        weakening_message=(
-            "No database-connection failure wording was found"
-        ),
+        weakening_message=("No database-connection failure wording was found"),
         fixes=(
             "Verify that the database is running and reachable.",
             "Check the hostname, port, username, and connection URL.",
@@ -439,9 +434,7 @@ HYPOTHESIS_EVALUATION_RULES: dict[
             r"|not-null constraint"
         ),
         supporting_message="Database-constraint violation wording was found",
-        weakening_message=(
-            "No database-constraint violation wording was found"
-        ),
+        weakening_message=("No database-constraint violation wording was found"),
         fixes=(
             "Inspect the database constraint in the error.",
             "Check for duplicate or missing related data.",
@@ -504,12 +497,8 @@ HYPOTHESIS_EVALUATION_RULES: dict[
             r"|staleobjectstate"
             r"|version conflict"
         ),
-        supporting_message=(
-            "Concurrent-transaction conflict wording was found"
-        ),
-        weakening_message=(
-            "No concurrent-transaction conflict wording was found"
-        ),
+        supporting_message=("Concurrent-transaction conflict wording was found"),
+        weakening_message=("No concurrent-transaction conflict wording was found"),
         fixes=(
             "Retry the complete transaction with a bounded policy.",
             "Review whether the isolation level is required.",

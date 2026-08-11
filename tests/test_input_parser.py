@@ -19,19 +19,14 @@ AuthenticationError: token expired
         encoding="utf-8",
     )
 
-    state = FileInputParser().parse(
-        str(error_file)
-    )
+    state = FileInputParser().parse(str(error_file))
 
     assert state["endpoint"] == "/api/login"
     assert state["method"] == "POST"
     assert state["status_code"] == 401
     assert state["error_message"] == "JWT token expired"
 
-    assert (
-        "AuthenticationError"
-        in state["stack_trace"]
-    )
+    assert "AuthenticationError" in state["stack_trace"]
 
 
 def test_parse_inline_error_message(tmp_path):
@@ -48,18 +43,14 @@ Stack Trace:
         encoding="utf-8",
     )
 
-    state = FileInputParser().parse(
-        str(error_file)
-    )
+    state = FileInputParser().parse(str(error_file))
 
     assert state["error_message"] == "JWT token expired"
 
 
 def test_missing_file():
     with pytest.raises(FileNotFoundError):
-        FileInputParser().parse(
-            "samples/file-does-not-exist.txt"
-        )
+        FileInputParser().parse("samples/file-does-not-exist.txt")
 
 
 def test_invalid_status_code(tmp_path):
@@ -81,9 +72,7 @@ Stack Trace:
         ValueError,
         match="Invalid status code",
     ):
-        FileInputParser().parse(
-            str(error_file)
-        )
+        FileInputParser().parse(str(error_file))
 
 
 def test_missing_error_message(tmp_path):
@@ -104,6 +93,4 @@ AuthenticationError
         ValueError,
         match="Error Message",
     ):
-        FileInputParser().parse(
-            str(error_file)
-        )
+        FileInputParser().parse(str(error_file))

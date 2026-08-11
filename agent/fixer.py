@@ -1,7 +1,7 @@
-from typing import List
 from .state import AgentState
 
-class FixSuggester :
+
+class FixSuggester:
     """
     Generates practical debugging steps for the chosen root cause.
     """
@@ -53,21 +53,21 @@ class FixSuggester :
             "Add validation and logging around the failure point.",
         ],
         "User lacks required permission": [
-    "Check which permission the endpoint requires.",
-    "Grant the required permission only if the user should have access.",
-    "Verify that the permission check uses the correct user identity.",
-],
-"Token has insufficient scope": [
-    "Inspect the scopes included in the access token.",
-    "Request a token containing the scope required by the endpoint.",
-    "Verify that the API checks the intended scope name.",
-],
-"User role is not allowed for this resource": [
-    "Check which roles are allowed to access the resource.",
-    "Verify that the user has been assigned the correct role.",
-    "Review the role-based access-control policy for the endpoint.",
-],
-"Database connection is unavailable": [
+            "Check which permission the endpoint requires.",
+            "Grant the required permission only if the user should have access.",
+            "Verify that the permission check uses the correct user identity.",
+        ],
+        "Token has insufficient scope": [
+            "Inspect the scopes included in the access token.",
+            "Request a token containing the scope required by the endpoint.",
+            "Verify that the API checks the intended scope name.",
+        ],
+        "User role is not allowed for this resource": [
+            "Check which roles are allowed to access the resource.",
+            "Verify that the user has been assigned the correct role.",
+            "Review the role-based access-control policy for the endpoint.",
+        ],
+        "Database connection is unavailable": [
             "Verify that the database server is running and reachable.",
             "Check the database hostname, port, username, and connection URL.",
             "Inspect firewall rules, network access, and connection-pool limits.",
@@ -83,23 +83,22 @@ class FixSuggester :
             "Run the query in a safe development environment to reproduce the failure.",
         ],
         "Database deadlock occurred": [
-    "Keep transactions short and avoid unnecessary work while holding locks.",
-    "Access shared tables and rows in a consistent order across transactions.",
-    "Add a bounded retry with backoff for transactions selected as deadlock victims.",
-],
-"Database lock wait timed out": [
-    "Identify the transaction holding the required database lock.",
-    "Reduce long-running transactions and commit or roll them back promptly.",
-    "Check whether missing indexes are causing queries to lock more rows than necessary.",
-],
-"Transaction serialization conflict occurred": [
-    "Retry the complete transaction using a bounded retry policy.",
-    "Review whether the current transaction isolation level is required.",
-    "Use version checks or optimistic concurrency controls for conflicting updates.",
-],
+            "Keep transactions short and avoid unnecessary work while holding locks.",
+            "Access shared tables and rows in a consistent order across transactions.",
+            "Add a bounded retry with backoff for transactions selected as deadlock victims.",
+        ],
+        "Database lock wait timed out": [
+            "Identify the transaction holding the required database lock.",
+            "Reduce long-running transactions and commit or roll them back promptly.",
+            "Check whether missing indexes are causing queries to lock more rows than necessary.",
+        ],
+        "Transaction serialization conflict occurred": [
+            "Retry the complete transaction using a bounded retry policy.",
+            "Review whether the current transaction isolation level is required.",
+            "Use version checks or optimistic concurrency controls for conflicting updates.",
+        ],
     }
 
-    
     CATEGORY_FIXES = {
         "AUTHENTICATION": [
             "Check the Authorization header and token lifecycle.",
@@ -126,28 +125,25 @@ class FixSuggester :
             "Verify database connectivity, schema constraints, and query correctness.",
         ],
         "DATABASE_CONCURRENCY": [
-    "Inspect active transactions, locks, and database wait events.",
-    "Review transaction duration, lock order, isolation level, and retry behavior.",
-],
+            "Inspect active transactions, locks, and database wait events.",
+            "Review transaction duration, lock order, isolation level, and retry behavior.",
+        ],
     }
-    
-    def suggest (self, state: AgentState) -> AgentState:
+
+    def suggest(self, state: AgentState) -> AgentState:
         """
         Suggest fixes for the final root cause.
         """
-        
+
         root_cause = state.get("root_cause", "")
-        failure_type = state.get("failure_type" , "UNKNOWN")
-        
-        fixes : List[str] = self.CAUSE_FIXES.get(
-            root_cause ,
-            self.CATEGORY_FIXES.get(
-                failure_type , 
-                self.CATEGORY_FIXES["UNKNOWN"]
-                ) ,
+        failure_type = state.get("failure_type", "UNKNOWN")
+
+        fixes: list[str] = self.CAUSE_FIXES.get(
+            root_cause,
+            self.CATEGORY_FIXES.get(failure_type, self.CATEGORY_FIXES["UNKNOWN"]),
         )
-        
+
         # make a new list so state owns its own copy
         state["suggested_fixes"] = list(fixes)
-        
+
         return state

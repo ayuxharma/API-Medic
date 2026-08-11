@@ -20,22 +20,15 @@ class FailureClassifier:
         Score all configured categories and select the best match.
         """
 
-        error_message = (
-            state.get("error_message") or ""
-        ).lower()
+        error_message = (state.get("error_message") or "").lower()
 
-        stack_trace = (
-            state.get("stack_trace") or ""
-        ).lower()
+        stack_trace = (state.get("stack_trace") or "").lower()
 
         status_code = state.get("status_code")
 
         text_to_check = f"{error_message} {stack_trace}"
 
-        scores = {
-            category: 0
-            for category in CATEGORY_RULES
-        }
+        scores = {category: 0 for category in CATEGORY_RULES}
 
         signals: list[str] = []
 
@@ -64,9 +57,7 @@ class FailureClassifier:
 
         if scores[best_category] == 0:
             state["failure_type"] = UNKNOWN
-            signals.append(
-                "No known classification signal was found"
-            )
+            signals.append("No known classification signal was found")
         else:
             state["failure_type"] = best_category
 
@@ -91,18 +82,10 @@ class FailureClassifier:
             signals.append(status_rule.message)
             return
 
-        if (
-            isinstance(status_code, int)
-            and status_code >= SERVER_ERROR_MIN_STATUS
-        ):
-            scores[SERVER_ERROR] += (
-                SERVER_ERROR_STATUS_WEIGHT
-            )
+        if isinstance(status_code, int) and status_code >= SERVER_ERROR_MIN_STATUS:
+            scores[SERVER_ERROR] += SERVER_ERROR_STATUS_WEIGHT
 
-            signals.append(
-                f"HTTP {status_code} indicates "
-                f"a server-side failure"
-            )
+            signals.append(f"HTTP {status_code} indicates a server-side failure")
 
     @staticmethod
     def _apply_strong_signals(
@@ -121,13 +104,10 @@ class FailureClassifier:
 
                 scores[category] += rule.strong_weight
 
-                signal_label = (
-                    category.lower().replace("_", "-")
-                )
+                signal_label = category.lower().replace("_", "-")
 
                 signals.append(
-                    f"Matched strong {signal_label} signal "
-                    f"'{strong_signal}'"
+                    f"Matched strong {signal_label} signal '{strong_signal}'"
                 )
 
                 # One strong signal per category is sufficient.
@@ -150,6 +130,4 @@ class FailureClassifier:
 
                 scores[category] += KEYWORD_WEIGHT
 
-                signals.append(
-                    f"Matched '{keyword}' for {category}"
-                )
+                signals.append(f"Matched '{keyword}' for {category}")

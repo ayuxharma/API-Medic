@@ -26,24 +26,17 @@ class FileInputParser:
         path = Path(file_path)
 
         if not path.exists():
-            raise FileNotFoundError(
-                f"Input file was not found: {path}"
-            )
+            raise FileNotFoundError(f"Input file was not found: {path}")
 
         if not path.is_file():
-            raise ValueError(
-                f"Input path is not a file: {path}"
-            )
+            raise ValueError(f"Input path is not a file: {path}")
 
         try:
             content = path.read_text(encoding="utf-8")
         except UnicodeDecodeError as error:
-            raise ValueError(
-                "Input file must contain valid UTF-8 text"
-            ) from error
+            raise ValueError("Input file must contain valid UTF-8 text") from error
 
         return self.parse_text(content)
-    
 
     def parse_text(self, content: str) -> AgentState:
         """
@@ -80,34 +73,20 @@ class FileInputParser:
                 continue
 
             if current_field is not None:
-                sections[current_field].append(
-                    raw_line.rstrip()
-                )
+                sections[current_field].append(raw_line.rstrip())
 
-        endpoint = self._join_lines(
-            sections["endpoint"]
-        ) or "Not provided"
+        endpoint = self._join_lines(sections["endpoint"]) or "Not provided"
 
-        method = (
-            self._join_lines(sections["method"]) or "GET"
-        ).upper()
+        method = (self._join_lines(sections["method"]) or "GET").upper()
 
-        status_code = self._parse_status_code(
-            self._join_lines(sections["status_code"])
-        )
+        status_code = self._parse_status_code(self._join_lines(sections["status_code"]))
 
-        error_message = self._join_lines(
-            sections["error_message"]
-        )
+        error_message = self._join_lines(sections["error_message"])
 
-        stack_trace = self._join_lines(
-            sections["stack_trace"]
-        )
+        stack_trace = self._join_lines(sections["stack_trace"])
 
         if not error_message:
-            raise ValueError(
-                "Error Message is required in the input"
-            )
+            raise ValueError("Error Message is required in the input")
 
         return {
             "endpoint": endpoint,
@@ -157,13 +136,9 @@ class FileInputParser:
         try:
             status_code = int(value)
         except ValueError as error:
-            raise ValueError(
-                f"Invalid status code: {value}"
-            ) from error
+            raise ValueError(f"Invalid status code: {value}") from error
 
         if not 100 <= status_code <= 599:
-            raise ValueError(
-                "Status code must be between 100 and 599"
-            )
+            raise ValueError("Status code must be between 100 and 599")
 
         return status_code
