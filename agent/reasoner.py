@@ -1,15 +1,21 @@
-from typing import Any
-
-from .state import AgentState
+from .state import (
+    AgentState,
+    AlternativeCauseData,
+    HypothesisData,
+)
 
 
 class RootCauseReasoner:
     """
-    Selects the strongest existing hypothesis as the root cause.
+    Select the strongest existing hypothesis as the root cause.
     """
 
     def reason(self, state: AgentState) -> AgentState:
-        hypotheses: list[dict[str, Any]] = state.get(
+        """
+        Rank hypotheses and store the final reasoning result.
+        """
+
+        hypotheses: list[HypothesisData] = state.get(
             "hypotheses",
             [],
         )
@@ -23,8 +29,10 @@ class RootCauseReasoner:
 
         if not hypotheses:
             state["root_cause"] = "Unable to determine the root cause"
+
             state["confidence_score"] = 0.0
             state["alternative_causes"] = []
+
             return state
 
         primary = hypotheses[0]
@@ -34,7 +42,7 @@ class RootCauseReasoner:
 
         total_score = sum(hypothesis["score"] for hypothesis in hypotheses)
 
-        alternatives = []
+        alternatives: list[AlternativeCauseData] = []
 
         for hypothesis in hypotheses[1:4]:
             relative_share = 0.0
@@ -45,13 +53,13 @@ class RootCauseReasoner:
                     1,
                 )
 
-            alternatives.append(
-                {
-                    "cause": hypothesis["cause"],
-                    "score": hypothesis["score"],
-                    "relative_share": relative_share,
-                }
-            )
+            alternative: AlternativeCauseData = {
+                "cause": hypothesis["cause"],
+                "score": hypothesis["score"],
+                "relative_share": relative_share,
+            }
+
+            alternatives.append(alternative)
 
         state["alternative_causes"] = alternatives
 

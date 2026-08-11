@@ -52,7 +52,7 @@ class FailureClassifier:
 
         best_category = max(
             scores,
-            key=scores.get,
+            key=lambda category: scores[category],
         )
 
         if scores[best_category] == 0:
@@ -75,7 +75,7 @@ class FailureClassifier:
         Apply exact and generic HTTP status-code rules.
         """
 
-        status_rule = STATUS_RULES.get(status_code)
+        status_rule = STATUS_RULES.get(status_code) if status_code is not None else None
 
         if status_rule is not None:
             scores[status_rule.category] += status_rule.weight

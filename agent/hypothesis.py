@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Any
 
 from .rules import HYPOTHESIS_TEMPLATES, UNKNOWN
-from .state import AgentState
+from .state import AgentState, HypothesisData
 
 
 @dataclass
@@ -45,7 +44,7 @@ class Hypothesis:
                 0.0,
             )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> HypothesisData:
         """
         Convert the hypothesis into a serializable dictionary.
         """
@@ -61,7 +60,7 @@ class Hypothesis:
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any],
+        data: HypothesisData,
     ) -> "Hypothesis":
         """
         Rebuild a Hypothesis object from a dictionary.
@@ -70,9 +69,9 @@ class Hypothesis:
         return cls(
             cause=data["cause"],
             category=data["category"],
-            score=float(data["score"]),
-            supporting_evidence=list(data.get("supporting_evidence", [])),
-            weakening_evidence=list(data.get("weakening_evidence", [])),
+            score=data["score"],
+            supporting_evidence=list(data["supporting_evidence"]),
+            weakening_evidence=list(data["weakening_evidence"]),
         )
 
 

@@ -1,185 +1,21 @@
 import re
 
 from .hypothesis import Hypothesis
+from .rules import (
+    COMPETING_EVIDENCE_PENALTY,
+    HYPOTHESIS_EVALUATION_RULES,
+)
 from .state import AgentState
 
 
 class EvidenceMatcher:
     """
-    Finds concrete clues in the error message and stack trace,
-    then adjusts hypothesis scores.
+    Find supporting evidence for generated hypotheses.
     """
-
-    EVIDENCE_RULES = [
-        {
-            "pattern": r"(jwt|token).*(expired|expiration)",
-            "cause": "JWT token has expired",
-            "message": "Token-expiration wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"(authorization|auth).*(missing|absent|required)"
-                r"|missing.*(authorization|auth)"
-            ),
-            "cause": "Authorization header is missing or malformed",
-            "message": "Authorization-header absence was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"signature.*(invalid|failed|verification)"
-                r"|invalid.*signature"
-            ),
-            "cause": "Token signature verification failed",
-            "message": "Token-signature failure wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": r"(required|missing).*(field|parameter|email)",
-            "cause": "Required field is missing from request",
-            "message": "Required or missing request field was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": r"type mismatch|expected.*got|invalid type",
-            "cause": "Field type mismatch",
-            "message": "Field type-mismatch wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"invalid.*(email|url|date|format)"
-                r"|format validation"
-            ),
-            "cause": "Field format validation failed",
-            "message": "Invalid field-format wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": r"nullpointer|null pointer|nonetype",
-            "cause": "Null pointer dereference",
-            "message": "Null-reference wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": r"undefined|not defined",
-            "cause": "Undefined variable or method call",
-            "message": "Undefined-reference wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": r"traceback|unhandled exception|exception",
-            "cause": "Unhandled exception in application code",
-            "message": "Unhandled-exception wording was found",
-            "weight": 0.20,
-        },
-        {
-            "pattern": (
-                r"permission.*(denied|missing|required|insufficient)"
-                r"|(?:denied|missing|insufficient).*permission"
-                r"|access denied"
-            ),
-            "cause": "User lacks required permission",
-            "message": "Permission-denial wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"insufficient.*scope"
-                r"|scope.*(missing|required|insufficient)"
-            ),
-            "cause": "Token has insufficient scope",
-            "message": "Insufficient token-scope wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"role.*(required|forbidden|denied|not allowed)"
-                r"|(?:required|forbidden).*role"
-            ),
-            "cause": "User role is not allowed for this resource",
-            "message": "Role-based access wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"database.*connection.*"
-                r"(refused|failed|timeout|unavailable)"
-                r"|(?:could not|cannot|failed to).*connect.*"
-                r"(database|postgres|postgresql|mysql)"
-                r"|too many connections"
-            ),
-            "cause": "Database connection is unavailable",
-            "message": "Database-connection failure wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"duplicate key"
-                r"|unique constraint"
-                r"|unique violation"
-                r"|foreign key constraint"
-                r"|integrityerror"
-                r"|not-null constraint"
-            ),
-            "cause": "Database constraint was violated",
-            "message": "Database-constraint violation wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"sql syntax"
-                r"|syntax error.*(sql|query|at or near)"
-                r"|query.*(failed|error)"
-                r"|operationalerror"
-                r"|programmingerror"
-            ),
-            "cause": "Database query execution failed",
-            "message": "Database-query failure wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"deadlock detected"
-                r"|deadlock found"
-                r"|deadlock victim"
-                r"|deadlock"
-            ),
-            "cause": "Database deadlock occurred",
-            "message": "Database-deadlock wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"lock wait timeout"
-                r"|lock acquisition.*timeout"
-                r"|could not obtain lock"
-                r"|database is locked"
-            ),
-            "cause": "Database lock wait timed out",
-            "message": "Database lock-timeout wording was found",
-            "weight": 0.30,
-        },
-        {
-            "pattern": (
-                r"could not serialize access"
-                r"|serialization failure"
-                r"|concurrent update"
-                r"|optimistic lock"
-                r"|stale object"
-                r"|staleobjectstate"
-                r"|version conflict"
-            ),
-            "cause": ("Transaction serialization conflict occurred"),
-            "message": ("Concurrent-transaction conflict wording was found"),
-            "weight": 0.30,
-        },
-    ]
 
     def match(self, state: AgentState) -> AgentState:
         """
-        Apply relevant evidence rules to the hypotheses in state.
+        Apply configured evidence rules to relevant hypotheses.
         """
 
         error_message = state.get("error_message") or ""
@@ -191,15 +27,15 @@ class EvidenceMatcher:
             Hypothesis.from_dict(data) for data in state.get("hypotheses", [])
         ]
 
-        available_causes = {hypothesis.cause for hypothesis in hypotheses}
+        for target_hypothesis in hypotheses:
+            rule = HYPOTHESIS_EVALUATION_RULES.get(target_hypothesis.cause)
 
-        for rule in self.EVIDENCE_RULES:
-            # Skip rules belonging to a different failure category.
-            if rule["cause"] not in available_causes:
+            # UNKNOWN and generic hypotheses may have no rule.
+            if rule is None:
                 continue
 
             evidence_found = re.search(
-                rule["pattern"],
+                rule.pattern,
                 text_to_check,
                 re.IGNORECASE,
             )
@@ -208,17 +44,19 @@ class EvidenceMatcher:
                 continue
 
             for hypothesis in hypotheses:
-                if hypothesis.cause == rule["cause"]:
+                if hypothesis.cause == target_hypothesis.cause:
                     hypothesis.add_evidence(
-                        message=rule["message"],
+                        message=rule.supporting_message,
                         supports=True,
-                        weight=rule["weight"],
+                        weight=rule.support_weight,
                     )
                 else:
                     hypothesis.add_evidence(
-                        message=(f"Evidence supports '{rule['cause']}' instead"),
+                        message=(
+                            f"Evidence supports '{target_hypothesis.cause}' instead"
+                        ),
                         supports=False,
-                        weight=0.15,
+                        weight=(COMPETING_EVIDENCE_PENALTY),
                     )
 
         hypotheses.sort(

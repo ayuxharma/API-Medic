@@ -5,7 +5,7 @@ from agent.state import AgentState
 from agent.workflow import DebuggerWorkflow
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """
     Define and read command-line arguments.
     """
@@ -53,13 +53,19 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def build_state(args) -> AgentState:
+def build_state(
+    args: argparse.Namespace,
+) -> AgentState:
     """
     Convert direct command-line arguments into AgentState.
 
     This function is used when the user provides --error
     instead of --file.
     """
+
+    if args.error is None:
+        raise ValueError("An error message is required in direct-input mode")
+
     return {
         "endpoint": args.endpoint,
         "method": args.method.upper(),
@@ -69,7 +75,9 @@ def build_state(args) -> AgentState:
     }
 
 
-def load_initial_state(args) -> AgentState:
+def load_initial_state(
+    args: argparse.Namespace,
+) -> AgentState:
     """
     Select the correct input source.
 
