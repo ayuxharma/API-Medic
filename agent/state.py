@@ -1,4 +1,10 @@
-from typing import TypedDict
+from typing import Literal, TypedDict
+
+# These are the only valid routes through the workflow.
+AnalysisRoute = Literal[
+    "RULE_BASED",
+    "LLM_FALLBACK",
+]
 
 
 class HypothesisData(TypedDict):
@@ -15,7 +21,7 @@ class HypothesisData(TypedDict):
 
 class AlternativeCauseData(TypedDict):
     """
-    Serializable representation of an alternative cause.
+    Serializable representation of one alternative cause.
     """
 
     cause: str
@@ -27,26 +33,33 @@ class AgentState(TypedDict, total=False):
     """
     Shared state passed through the debugging workflow.
 
-    total=False means fields can be added gradually as the
-    state moves through the pipeline.
+    total=False allows fields to be added gradually as the
+    state moves through the graph.
     """
 
-    # Input
+    # Original user input
     endpoint: str
     method: str
     status_code: int | None
     error_message: str
     stack_trace: str
 
-    # Classification
+    # Classification result
     failure_type: str
     signals: list[str]
 
     # Hypothesis processing
     hypotheses: list[HypothesisData]
 
-    # Final reasoning
+    # Root-cause reasoning
     root_cause: str
     confidence_score: float
     alternative_causes: list[AlternativeCauseData]
+
+    # Workflow routing
+    analysis_route: AnalysisRoute
+    routing_reason: str
+    llm_used: bool
+
+    # Final output
     suggested_fixes: list[str]

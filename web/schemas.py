@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -104,4 +106,13 @@ class DiagnosisResponse(BaseModel):
     root_cause: str
     confidence_score: float
     alternative_causes: list[AlternativeCauseResponse]
+
+    # Explain which workflow branch produced the result.
+    analysis_route: Literal[
+        "RULE_BASED",
+        "LLM_FALLBACK",
+    ]
+    routing_reason: str
+    llm_used: bool
+
     suggested_fixes: list[str]

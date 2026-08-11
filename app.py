@@ -167,6 +167,25 @@ def print_results(state: AgentState) -> None:
 
     print("-", f"Evidence score: {confidence_score}")
 
+    print("\nAnalysis routing:")
+
+    print(
+        "-",
+        f"Selected route: {state.get('analysis_route', 'RULE_BASED')}",
+    )
+
+    print(
+        "-",
+        f"Reason: {state.get('routing_reason', 'Not provided')}",
+    )
+
+    llm_used = state.get("llm_used", False)
+
+    print(
+        "-",
+        f"LLM used: {'Yes' if llm_used else 'No'}",
+    )
+
     print("\nAlternative causes:")
 
     alternative_causes = state.get(
