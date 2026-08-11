@@ -139,6 +139,46 @@ class EvidenceMatcher:
             "message": "Database-query failure wording was found",
             "weight": 0.30,
 },
+{
+    "pattern": (
+        r"deadlock detected"
+        r"|deadlock found"
+        r"|deadlock victim"
+        r"|deadlock"
+    ),
+    "cause": "Database deadlock occurred",
+    "message": "Database-deadlock wording was found",
+    "weight": 0.30,
+},
+{
+    "pattern": (
+        r"lock wait timeout"
+        r"|lock acquisition.*timeout"
+        r"|could not obtain lock"
+        r"|database is locked"
+    ),
+    "cause": "Database lock wait timed out",
+    "message": "Database lock-timeout wording was found",
+    "weight": 0.30,
+},
+{
+    "pattern": (
+        r"could not serialize access"
+        r"|serialization failure"
+        r"|concurrent update"
+        r"|optimistic lock"
+        r"|stale object"
+        r"|staleobjectstate"
+        r"|version conflict"
+    ),
+    "cause": (
+        "Transaction serialization conflict occurred"
+    ),
+    "message": (
+        "Concurrent-transaction conflict wording was found"
+    ),
+    "weight": 0.30,
+},
     ]
 
     def match(self, state: AgentState) -> AgentState:

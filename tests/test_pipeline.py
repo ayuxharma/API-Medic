@@ -165,3 +165,64 @@ def test_database_query_failure_pipeline() -> None:
     )
     assert result["confidence_score"] >= 0.8
     assert len(result["suggested_fixes"]) > 0
+    
+def test_database_deadlock_pipeline() -> None:
+    state = create_state(
+        500,
+        "Deadlock detected while waiting for transaction",
+    )
+
+    result = run_pipeline(state)
+
+    assert (
+        result["failure_type"]
+        == "DATABASE_CONCURRENCY"
+    )
+
+    assert result["root_cause"] == (
+        "Database deadlock occurred"
+    )
+
+    assert result["confidence_score"] >= 0.9
+    assert len(result["suggested_fixes"]) > 0
+    
+    
+def test_database_lock_timeout_pipeline() -> None:
+    state = create_state(
+        503,
+        "Lock wait timeout exceeded",
+    )
+
+    result = run_pipeline(state)
+
+    assert (
+        result["failure_type"]
+        == "DATABASE_CONCURRENCY"
+    )
+
+    assert result["root_cause"] == (
+        "Database lock wait timed out"
+    )
+
+    assert result["confidence_score"] >= 0.8
+    assert len(result["suggested_fixes"]) > 0
+    
+def test_transaction_serialization_conflict_pipeline() -> None:
+    state = create_state(
+        409,
+        "Could not serialize access due to concurrent update",
+    )
+
+    result = run_pipeline(state)
+
+    assert (
+        result["failure_type"]
+        == "DATABASE_CONCURRENCY"
+    )
+
+    assert result["root_cause"] == (
+        "Transaction serialization conflict occurred"
+    )
+
+    assert result["confidence_score"] >= 0.8
+    assert len(result["suggested_fixes"]) > 0

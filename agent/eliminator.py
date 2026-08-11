@@ -119,6 +119,43 @@ class HypothesisEliminator:
     ),
     "penalty": 0.10,
 },
+"Database deadlock occurred": {
+    "pattern": (
+        r"deadlock detected"
+        r"|deadlock found"
+        r"|deadlock victim"
+        r"|deadlock"
+    ),
+    "message": "No database-deadlock wording was found",
+    "penalty": 0.10,
+},
+"Database lock wait timed out": {
+    "pattern": (
+        r"lock wait timeout"
+        r"|lock acquisition.*timeout"
+        r"|could not obtain lock"
+        r"|database is locked"
+    ),
+    "message": (
+        "No database lock-timeout wording was found"
+    ),
+    "penalty": 0.10,
+},
+"Transaction serialization conflict occurred": {
+    "pattern": (
+        r"could not serialize access"
+        r"|serialization failure"
+        r"|concurrent update"
+        r"|optimistic lock"
+        r"|stale object"
+        r"|staleobjectstate"
+        r"|version conflict"
+    ),
+    "message": (
+        "No concurrent-transaction conflict wording was found"
+    ),
+    "penalty": 0.10,
+},
     }
     
     def eliminate (self, state: AgentState) -> AgentState:

@@ -105,6 +105,11 @@ class HypothesisGenerator:
             ("Database constraint was violated", 0.60),
             ("Database query execution failed", 0.50),
         ],
+        "DATABASE_CONCURRENCY": [
+    ("Database deadlock occurred", 0.70),
+    ("Database lock wait timed out", 0.60),
+    ("Transaction serialization conflict occurred", 0.50),
+],
     }   
 
     def generate(self, state: AgentState) -> AgentState:

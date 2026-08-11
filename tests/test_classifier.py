@@ -79,3 +79,21 @@ def test_database_classification() -> None:
         "strong database signal" in signal.lower()
         for signal in result["signals"]
     )
+    
+
+def test_database_concurrency_classification() -> None:
+    state = create_state(
+        500,
+        "Deadlock detected while waiting for transaction",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert (
+        result["failure_type"] == "DATABASE_CONCURRENCY"
+    )
+
+    assert any(
+        "database-concurrency signal" in signal.lower()
+        for signal in result["signals"]
+    )

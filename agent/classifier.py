@@ -47,6 +47,19 @@ class FailureClassifier:
             "query failed" ,
             "integrityerror" ,
         ] ,
+        "DATABASE_CONCURRENCY": [
+            "deadlock",
+            "lock wait timeout",
+            "lock timeout",
+            "could not obtain lock",
+            "database is locked",
+            "could not serialize access",
+            "serialization failure",
+            "concurrent update",
+            "optimistic lock",
+            "stale object",
+            "version conflict",
+        ],
     }
     
     DATABASE_STRONG_SIGNALS = [
@@ -60,6 +73,21 @@ class FailureClassifier:
     "sql syntax",
     "integrityerror",
     ]   
+    
+    DATABASE_CONCURRENCY_STRONG_SIGNALS = [
+    "deadlock detected",
+    "deadlock found",
+    "deadlock victim",
+    "lock wait timeout",
+    "could not obtain lock",
+    "database is locked",
+    "could not serialize access",
+    "serialization failure",
+    "concurrent update",
+    "optimistic lock",
+    "stale object",
+    "version conflict",
+    ]
 
     def classify(self, state: AgentState) -> AgentState:
         # Read input safely. `or ""` prevents problems if a value is missing.
@@ -77,6 +105,7 @@ class FailureClassifier:
             "VALIDATION": 0,
             "SERVER_ERROR": 0,
             "DATABASE" : 0,
+            "DATABASE_CONCURRENCY" : 0,
         }
 
         signals : list[str] = []
@@ -99,6 +128,18 @@ class FailureClassifier:
         elif status_code is not None and status_code >= 500:
             scores["SERVER_ERROR"] += 5
             signals.append(f"HTTP {status_code} indicates a server-side failure")
+
+        # Specific concurrency evidence
+        for concurrency_signal in (self.DATABASE_CONCURRENCY_STRONG_SIGNALS):
+            if concurrency_signal in text_to_check:
+                scores["DATABASE_CONCURRENCY"] += 8
+
+                signals.append(
+                    f"Matched strong database-concurrency signal "
+                    f"'{concurrency_signal}'"
+        )
+
+                break
 
         for database_signal in self.DATABASE_STRONG_SIGNALS:
             if database_signal in text_to_check:

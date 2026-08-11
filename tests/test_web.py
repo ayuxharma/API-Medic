@@ -183,3 +183,56 @@ def test_api_diagnoses_authorization_failure() -> None:
         "User lacks required permission"
     )
     assert len(result["suggested_fixes"]) > 0
+    
+    
+def test_api_diagnoses_database_failure() -> None:
+    response = client.post(
+        "/api/diagnose",
+        json={
+            "endpoint": "/api/users",
+            "method": "POST",
+            "status_code": 500,
+            "error_message": "Database connection refused",
+            "stack_trace": "",
+        },
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["failure_type"] == "DATABASE"
+    assert result["root_cause"] == (
+        "Database connection is unavailable"
+    )
+    assert len(result["suggested_fixes"]) > 0
+    
+    
+def test_api_diagnoses_database_deadlock() -> None:
+    response = client.post(
+        "/api/diagnose",
+        json={
+            "endpoint": "/api/orders",
+            "method": "POST",
+            "status_code": 500,
+            "error_message": (
+                "Deadlock detected while waiting for transaction"
+            ),
+            "stack_trace": "",
+        },
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert (
+        result["failure_type"]
+        == "DATABASE_CONCURRENCY"
+    )
+
+    assert result["root_cause"] == (
+        "Database deadlock occurred"
+    )
+
+    assert len(result["suggested_fixes"]) > 0

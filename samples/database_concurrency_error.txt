@@ -1,0 +1,7 @@
+Endpoint: /api/orders
+Method: POST
+Status Code: 500
+Error Message:
+Deadlock detected while waiting for transaction
+Stack Trace:
+DatabaseError: transaction selected as deadlock victim

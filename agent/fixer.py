@@ -82,6 +82,21 @@ class FixSuggester :
             "Verify table names, column names, parameters, and SQL syntax.",
             "Run the query in a safe development environment to reproduce the failure.",
         ],
+        "Database deadlock occurred": [
+    "Keep transactions short and avoid unnecessary work while holding locks.",
+    "Access shared tables and rows in a consistent order across transactions.",
+    "Add a bounded retry with backoff for transactions selected as deadlock victims.",
+],
+"Database lock wait timed out": [
+    "Identify the transaction holding the required database lock.",
+    "Reduce long-running transactions and commit or roll them back promptly.",
+    "Check whether missing indexes are causing queries to lock more rows than necessary.",
+],
+"Transaction serialization conflict occurred": [
+    "Retry the complete transaction using a bounded retry policy.",
+    "Review whether the current transaction isolation level is required.",
+    "Use version checks or optimistic concurrency controls for conflicting updates.",
+],
     }
 
     
@@ -110,6 +125,10 @@ class FixSuggester :
             "Inspect database logs and application database exceptions.",
             "Verify database connectivity, schema constraints, and query correctness.",
         ],
+        "DATABASE_CONCURRENCY": [
+    "Inspect active transactions, locks, and database wait events.",
+    "Review transaction duration, lock order, isolation level, and retry behavior.",
+],
     }
     
     def suggest (self, state: AgentState) -> AgentState:
