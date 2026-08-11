@@ -94,3 +94,22 @@ def test_unknown_error_pipeline():
         "Insufficient information to identify the root cause"
     )
     assert len(result["suggested_fixes"]) > 0
+    
+def test_unrelated_evidence_does_not_reduce_authentication_score() -> None:
+    state = create_state(
+        401,
+        "JWT token expired; permission denied",
+    )
+
+    result = run_pipeline(state)
+
+    assert result["failure_type"] == "AUTHENTICATION"
+    assert result["root_cause"] == "JWT token has expired"
+    assert result["confidence_score"] >= 0.8
+
+    primary = result["hypotheses"][0]
+
+    assert all(
+        "User lacks required permission" not in evidence
+        for evidence in primary["weakening_evidence"]
+    )

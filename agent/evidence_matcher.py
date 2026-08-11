@@ -80,33 +80,33 @@ class EvidenceMatcher:
                 r"|(?:denied|missing|insufficient).*permission"
                 r"|access denied"
             ),
-    "cause": "User lacks required permission",
-    "message": "Permission-denial wording was found",
-    "weight": 0.30,
-},
-{
-    "pattern": (
-        r"insufficient.*scope"
-        r"|scope.*(missing|required|insufficient)"
-    ),
-    "cause": "Token has insufficient scope",
-    "message": "Insufficient token-scope wording was found",
-    "weight": 0.30,
-},
-{
-    "pattern": (
-        r"role.*(required|forbidden|denied|not allowed)"
-        r"|(?:required|forbidden).*role"
-    ),
-    "cause": "User role is not allowed for this resource",
-    "message": "Role-based access wording was found",
-    "weight": 0.30,
-},
+            "cause": "User lacks required permission",
+            "message": "Permission-denial wording was found",
+            "weight": 0.30,
+        },
+        {
+            "pattern": (
+                r"insufficient.*scope"
+                r"|scope.*(missing|required|insufficient)"
+            ),
+            "cause": "Token has insufficient scope",
+            "message": "Insufficient token-scope wording was found",
+            "weight": 0.30,
+        },
+        {
+            "pattern": (
+                r"role.*(required|forbidden|denied|not allowed)"
+                r"|(?:required|forbidden).*role"
+            ),
+            "cause": "User role is not allowed for this resource",
+            "message": "Role-based access wording was found",
+            "weight": 0.30,
+        },
     ]
 
     def match(self, state: AgentState) -> AgentState:
         """
-        Apply evidence rules to hypotheses already stored in state.
+        Apply relevant evidence rules to the hypotheses in state.
         """
 
         error_message = state.get("error_message") or ""
@@ -118,17 +118,17 @@ class EvidenceMatcher:
             Hypothesis.from_dict(data)
             for data in state.get("hypotheses", [])
         ]
-        
+
         available_causes = {
             hypothesis.cause
             for hypothesis in hypotheses
         }
-        
+
         for rule in self.EVIDENCE_RULES:
+            # Skip rules belonging to a different failure category.
             if rule["cause"] not in available_causes:
                 continue
 
-        for rule in self.EVIDENCE_RULES:
             evidence_found = re.search(
                 rule["pattern"],
                 text_to_check,
@@ -155,7 +155,6 @@ class EvidenceMatcher:
                         weight=0.15,
                     )
 
-        # These lines must be outside both loops.
         hypotheses.sort(
             key=lambda hypothesis: hypothesis.score,
             reverse=True,
@@ -166,5 +165,4 @@ class EvidenceMatcher:
             for hypothesis in hypotheses
         ]
 
-        # This must always run, even when no evidence matches.
         return state
