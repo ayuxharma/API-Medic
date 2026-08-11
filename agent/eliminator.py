@@ -79,6 +79,46 @@ class HypothesisEliminator:
     "message": "No role-based access wording was found",
     "penalty": 0.10,
 },
+"Database connection is unavailable": {
+    "pattern": (
+        r"database.*connection.*"
+        r"(refused|failed|timeout|unavailable)"
+        r"|(?:could not|cannot|failed to).*connect.*"
+        r"(database|postgres|postgresql|mysql)"
+        r"|too many connections"
+    ),
+    "message": (
+        "No database-connection failure wording was found"
+    ),
+    "penalty": 0.10,
+},
+"Database constraint was violated": {
+    "pattern": (
+        r"duplicate key"
+        r"|unique constraint"
+        r"|unique violation"
+        r"|foreign key constraint"
+        r"|integrityerror"
+        r"|not-null constraint"
+    ),
+    "message": (
+        "No database-constraint violation wording was found"
+    ),
+    "penalty": 0.10,
+},
+"Database query execution failed": {
+    "pattern": (
+        r"sql syntax"
+        r"|syntax error.*(sql|query|at or near)"
+        r"|query.*(failed|error)"
+        r"|operationalerror"
+        r"|programmingerror"
+    ),
+    "message": (
+        "No database-query failure wording was found"
+    ),
+    "penalty": 0.10,
+},
     }
     
     def eliminate (self, state: AgentState) -> AgentState:

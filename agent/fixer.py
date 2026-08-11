@@ -67,6 +67,21 @@ class FixSuggester :
     "Verify that the user has been assigned the correct role.",
     "Review the role-based access-control policy for the endpoint.",
 ],
+"Database connection is unavailable": [
+            "Verify that the database server is running and reachable.",
+            "Check the database hostname, port, username, and connection URL.",
+            "Inspect firewall rules, network access, and connection-pool limits.",
+        ],
+        "Database constraint was violated": [
+            "Inspect the database constraint named in the error message.",
+            "Check whether the submitted value already exists or references missing data.",
+            "Validate unique, foreign-key, and required values before executing the query.",
+        ],
+        "Database query execution failed": [
+            "Inspect the SQL or ORM query reported in the stack trace.",
+            "Verify table names, column names, parameters, and SQL syntax.",
+            "Run the query in a safe development environment to reproduce the failure.",
+        ],
     }
 
     
@@ -90,6 +105,10 @@ class FixSuggester :
         "UNKNOWN": [
             "Collect the HTTP status code, full error message, and stack trace.",
             "Add logging around the failed request before diagnosing further.",
+        ],
+        "DATABASE": [
+            "Inspect database logs and application database exceptions.",
+            "Verify database connectivity, schema constraints, and query correctness.",
         ],
     }
     

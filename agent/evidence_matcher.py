@@ -102,6 +102,43 @@ class EvidenceMatcher:
             "message": "Role-based access wording was found",
             "weight": 0.30,
         },
+        {
+            "pattern": (
+                r"database.*connection.*"
+                r"(refused|failed|timeout|unavailable)"
+                r"|(?:could not|cannot|failed to).*connect.*"
+                r"(database|postgres|postgresql|mysql)"
+                r"|too many connections"
+        ),
+            "cause": "Database connection is unavailable",
+            "message": "Database-connection failure wording was found",
+            "weight": 0.30,
+        },
+        {
+            "pattern": (
+                r"duplicate key"
+                r"|unique constraint"
+                r"|unique violation"
+                r"|foreign key constraint"
+                r"|integrityerror"
+                r"|not-null constraint"
+    ),
+            "cause": "Database constraint was violated",
+            "message": "Database-constraint violation wording was found",
+            "weight": 0.30,
+},
+{
+            "pattern": (
+                r"sql syntax"
+                r"|syntax error.*(sql|query|at or near)"
+                r"|query.*(failed|error)"
+                r"|operationalerror"
+                r"|programmingerror"
+    ),
+            "cause": "Database query execution failed",
+            "message": "Database-query failure wording was found",
+            "weight": 0.30,
+},
     ]
 
     def match(self, state: AgentState) -> AgentState:

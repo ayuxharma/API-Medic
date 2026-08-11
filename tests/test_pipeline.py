@@ -113,3 +113,55 @@ def test_unrelated_evidence_does_not_reduce_authentication_score() -> None:
         "User lacks required permission" not in evidence
         for evidence in primary["weakening_evidence"]
     )
+    
+def test_database_connection_failure_pipeline() -> None:
+    state = create_state(
+        500,
+        "Database connection refused",
+    )
+
+    result = run_pipeline(state)
+
+    assert result["failure_type"] == "DATABASE"
+    assert result["root_cause"] == (
+        "Database connection is unavailable"
+    )
+    assert result["confidence_score"] >= 0.9
+    assert len(result["suggested_fixes"]) > 0
+
+    primary = result["hypotheses"][0]
+
+    assert primary["cause"] == (
+        "Database connection is unavailable"
+    )
+    assert len(primary["supporting_evidence"]) > 0
+    
+def test_database_constraint_failure_pipeline() -> None:
+    state = create_state(
+        409,
+        "Duplicate key violates unique constraint users_email_key",
+    )
+
+    result = run_pipeline(state)
+
+    assert result["failure_type"] == "DATABASE"
+    assert result["root_cause"] == (
+        "Database constraint was violated"
+    )
+    assert result["confidence_score"] >= 0.8
+    assert len(result["suggested_fixes"]) > 0
+    
+def test_database_query_failure_pipeline() -> None:
+    state = create_state(
+        500,
+        "SQL syntax error at or near FROM",
+    )
+
+    result = run_pipeline(state)
+
+    assert result["failure_type"] == "DATABASE"
+    assert result["root_cause"] == (
+        "Database query execution failed"
+    )
+    assert result["confidence_score"] >= 0.8
+    assert len(result["suggested_fixes"]) > 0

@@ -33,7 +33,33 @@ class FailureClassifier:
             "nullpointer",
             "internal server error",
         ],
+        "DATABASE" : [
+            "database" ,
+            "postgres" ,
+            "postgresql" ,
+            "mysql" ,
+            "sqlalchemy" ,
+            "psycopg" ,
+            "duplicate key" ,
+            "unique constraint" ,
+            "unique key" ,
+            "sql syntax" ,
+            "query failed" ,
+            "integrityerror" ,
+        ] ,
     }
+    
+    DATABASE_STRONG_SIGNALS = [
+    "database connection",
+    "psycopg",
+    "sqlalchemy.exc",
+    "mysql.connector",
+    "duplicate key",
+    "unique constraint",
+    "foreign key constraint",
+    "sql syntax",
+    "integrityerror",
+    ]   
 
     def classify(self, state: AgentState) -> AgentState:
         # Read input safely. `or ""` prevents problems if a value is missing.
@@ -50,6 +76,7 @@ class FailureClassifier:
             "AUTHORIZATION" : 0,
             "VALIDATION": 0,
             "SERVER_ERROR": 0,
+            "DATABASE" : 0,
         }
 
         signals : list[str] = []
@@ -73,6 +100,15 @@ class FailureClassifier:
             scores["SERVER_ERROR"] += 5
             signals.append(f"HTTP {status_code} indicates a server-side failure")
 
+        for database_signal in self.DATABASE_STRONG_SIGNALS:
+            if database_signal in text_to_check:
+                scores["DATABASE"] += 6
+                signals.append(
+                    f"Matched strong database signal "
+                    f"'{database_signal}'"
+                )
+                break
+        
         # Check category-specific words and phrases.
         for category, keywords in self.RULES.items():
             for keyword in keywords:

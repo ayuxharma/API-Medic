@@ -64,3 +64,18 @@ def test_unknown_classification():
     result = FailureClassifier().classify(state)
 
     assert result["failure_type"] == "UNKNOWN"
+    
+def test_database_classification() -> None:
+    state = create_state(
+        500,
+        "Database connection refused",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert result["failure_type"] == "DATABASE"
+
+    assert any(
+        "strong database signal" in signal.lower()
+        for signal in result["signals"]
+    )

@@ -100,7 +100,12 @@ class HypothesisGenerator:
         "UNKNOWN": [
             ("Insufficient information to identify the root cause", 0.20),
         ],
-    }
+        "DATABASE": [
+            ("Database connection is unavailable", 0.70),
+            ("Database constraint was violated", 0.60),
+            ("Database query execution failed", 0.50),
+        ],
+    }   
 
     def generate(self, state: AgentState) -> AgentState:
         """
