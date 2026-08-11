@@ -91,3 +91,71 @@ def test_html_form_runs_diagnosis() -> None:
     assert "AUTHENTICATION" in response.text
     assert "JWT token has expired" in response.text
     assert "Suggested fixes" in response.text
+
+
+def test_upload_valid_error_file() -> None:
+    file_content = """Endpoint: /api/login
+Method: POST
+Status Code: 401
+Error Message:
+JWT token expired
+Stack Trace:
+"""
+
+    response = client.post(
+        "/diagnose/upload",
+        files={
+            "file": (
+                "auth-error.txt",
+                file_content,
+                "text/plain",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    assert "API Diagnosis Result" in response.text
+    assert "AUTHENTICATION" in response.text
+    assert "JWT token has expired" in response.text
+
+
+def test_upload_rejects_missing_error_message() -> None:
+    file_content = """Endpoint: /api/login
+Method: POST
+Status Code: 401
+Error Message:
+Stack Trace:
+"""
+
+    response = client.post(
+        "/diagnose/upload",
+        files={
+            "file": (
+                "invalid-error.txt",
+                file_content,
+                "text/plain",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Input error" in response.text
+    assert "Error Message is required" in response.text
+
+
+def test_upload_rejects_large_file() -> None:
+    large_content = "x" * 100_001
+
+    response = client.post(
+        "/diagnose/upload",
+        files={
+            "file": (
+                "large-error.txt",
+                large_content,
+                "text/plain",
+            )
+        },
+    )
+
+    assert response.status_code == 413
+    assert "100 KB or smaller" in response.text

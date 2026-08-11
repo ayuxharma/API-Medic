@@ -1,10 +1,18 @@
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, Form, Request
+from fastapi import (
+    FastAPI,
+    File,
+    Form,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 
+from agent.input_parser import FileInputParser
 from web.schemas import DiagnosisRequest, DiagnosisResponse
 from web.services import run_diagnosis
 
@@ -12,9 +20,13 @@ from web.services import run_diagnosis
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
 TEMPLATES_DIRECTORY = BASE_DIRECTORY / "templates"
 
+MAX_UPLOAD_SIZE = 100_000
+
 templates = Jinja2Templates(
     directory=str(TEMPLATES_DIRECTORY),
 )
+
+file_parser = FileInputParser()
 
 
 app = FastAPI(
@@ -30,12 +42,14 @@ app = FastAPI(
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request) -> HTMLResponse:
     """
-    Display the browser-based API debugging form.
+    Display the browser-based debugging form.
     """
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={},
+        context={
+            "error": None,
+        },
     )
 
 
@@ -57,7 +71,7 @@ def diagnose_api_failure(
     payload: DiagnosisRequest,
 ) -> DiagnosisResponse:
     """
-    Accept JSON input and return a JSON diagnosis.
+    Accept JSON data and return a JSON diagnosis.
     """
     return run_diagnosis(payload)
 
@@ -68,10 +82,84 @@ def diagnose_from_form(
     payload: Annotated[DiagnosisRequest, Form()],
 ) -> HTMLResponse:
     """
-    Accept browser form input and display an HTML diagnosis.
+    Accept manually entered form data and display the result.
     """
 
     result = run_diagnosis(payload)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="result.html",
+        context={
+            "result": result,
+        },
+    )
+
+
+@app.post(
+    "/diagnose/upload",
+    response_class=HTMLResponse,
+)
+async def diagnose_from_uploaded_file(
+    request: Request,
+    file: Annotated[
+        UploadFile,
+        File(description="Structured API error text file"),
+    ],
+) -> HTMLResponse:
+    """
+    Parse an uploaded UTF-8 text file and display its diagnosis.
+    """
+
+    try:
+        uploaded_content = await file.read(
+            MAX_UPLOAD_SIZE + 1
+        )
+    finally:
+        await file.close()
+
+    if len(uploaded_content) > MAX_UPLOAD_SIZE:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={
+                "error": "Uploaded file must be 100 KB or smaller.",
+            },
+            status_code=413,
+        )
+
+    try:
+        text_content = uploaded_content.decode("utf-8")
+
+        parsed_state = file_parser.parse_text(text_content)
+
+        payload = DiagnosisRequest.model_validate(
+            parsed_state
+        )
+
+        result = run_diagnosis(payload)
+
+    except UnicodeDecodeError:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={
+                "error": (
+                    "Uploaded file must contain valid UTF-8 text."
+                ),
+            },
+            status_code=400,
+        )
+
+    except (ValueError, ValidationError) as error:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={
+                "error": str(error),
+            },
+            status_code=400,
+        )
 
     return templates.TemplateResponse(
         request=request,
