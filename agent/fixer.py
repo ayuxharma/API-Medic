@@ -52,6 +52,21 @@ class FixSuggester :
             "Handle the expected exception near the risky operation.",
             "Add validation and logging around the failure point.",
         ],
+        "User lacks required permission": [
+    "Check which permission the endpoint requires.",
+    "Grant the required permission only if the user should have access.",
+    "Verify that the permission check uses the correct user identity.",
+],
+"Token has insufficient scope": [
+    "Inspect the scopes included in the access token.",
+    "Request a token containing the scope required by the endpoint.",
+    "Verify that the API checks the intended scope name.",
+],
+"User role is not allowed for this resource": [
+    "Check which roles are allowed to access the resource.",
+    "Verify that the user has been assigned the correct role.",
+    "Review the role-based access-control policy for the endpoint.",
+],
     }
 
     
@@ -59,6 +74,10 @@ class FixSuggester :
         "AUTHENTICATION": [
             "Check the Authorization header and token lifecycle.",
             "Verify authentication configuration and credentials.",
+        ],
+        "AUTHORIZATION": [
+            "Check the user's roles, permissions, and token scopes.",
+            "Verify the endpoint's access-control policy.",
         ],
         "VALIDATION": [
             "Compare the request with the endpoint's documented schema.",

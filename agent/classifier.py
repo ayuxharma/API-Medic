@@ -12,6 +12,15 @@ class FailureClassifier:
             "unauthorized",
             "authentication failed",
         ],
+        "AUTHORIZATION" : [
+            "forbidden" ,
+            "permission denied" ,
+            "insufficient permission" ,
+            "insufficient scope" ,
+            "access denied" ,
+            "role required" ,
+            "not allowed" ,
+        ] ,
         "VALIDATION": [
             "required field",
             "is required",
@@ -38,17 +47,24 @@ class FailureClassifier:
         # A score decides which category has the strongest evidence.
         scores = {
             "AUTHENTICATION": 0,
+            "AUTHORIZATION" : 0,
             "VALIDATION": 0,
             "SERVER_ERROR": 0,
         }
 
-        signals = []
+        signals : list[str] = []
 
         # Status codes are stronger evidence than ordinary keywords.
         if status_code == 401:
             scores["AUTHENTICATION"] += 5
             signals.append("HTTP 401 usually means authentication failed")
 
+        elif status_code == 403:
+            scores["AUTHORIZATION"] += 5
+            signals.append(
+                "HTTP 403 usually means access is forbidden"
+            )
+        
         elif status_code == 400:
             scores["VALIDATION"] += 5
             signals.append("HTTP 400 usually means invalid request data")

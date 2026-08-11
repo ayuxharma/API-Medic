@@ -82,6 +82,11 @@ class HypothesisGenerator:
             ("Authorization header is missing or malformed", 0.50),
             ("Token signature verification failed", 0.40),
         ],
+        "AUTHORIZATION": [
+            ("User lacks required permission", 0.70),
+            ("Token has insufficient scope", 0.60),
+            ("User role is not allowed for this resource", 0.50),
+        ],
         "VALIDATION": [
             ("Required field is missing from request", 0.70),
             ("Field type mismatch", 0.60),

@@ -54,6 +54,31 @@ class HypothesisEliminator:
             "message": "No unhandled-exception wording was found",
             "penalty": 0.10,
         },
+        "User lacks required permission": {
+    "pattern": (
+        r"permission.*(denied|missing|required|insufficient)"
+        r"|(?:denied|missing|insufficient).*permission"
+        r"|access denied"
+    ),
+    "message": "No permission-denial wording was found",
+    "penalty": 0.10,
+},
+"Token has insufficient scope": {
+    "pattern": (
+        r"insufficient.*scope"
+        r"|scope.*(missing|required|insufficient)"
+    ),
+    "message": "No insufficient-scope wording was found",
+    "penalty": 0.10,
+},
+"User role is not allowed for this resource": {
+    "pattern": (
+        r"role.*(required|forbidden|denied|not allowed)"
+        r"|(?:required|forbidden).*role"
+    ),
+    "message": "No role-based access wording was found",
+    "penalty": 0.10,
+},
     }
     
     def eliminate (self, state: AgentState) -> AgentState:

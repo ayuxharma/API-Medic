@@ -39,6 +39,20 @@ def test_server_error_classification():
     result = FailureClassifier().classify(state)
 
     assert result["failure_type"] == "SERVER_ERROR"
+    
+def test_authorization_classification() -> None:
+    state = create_state(
+        403,
+        "Permission denied for this resource",
+    )
+
+    result = FailureClassifier().classify(state)
+
+    assert result["failure_type"] == "AUTHORIZATION"
+    assert any(
+        "HTTP 403" in signal
+        for signal in result["signals"]
+    )
 
 
 def test_unknown_classification():

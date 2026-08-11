@@ -159,3 +159,27 @@ def test_upload_rejects_large_file() -> None:
 
     assert response.status_code == 413
     assert "100 KB or smaller" in response.text
+    
+def test_api_diagnoses_authorization_failure() -> None:
+    response = client.post(
+        "/api/diagnose",
+        json={
+            "endpoint": "/api/admin/users",
+            "method": "DELETE",
+            "status_code": 403,
+            "error_message": (
+                "Permission denied for this resource"
+            ),
+            "stack_trace": "",
+        },
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["failure_type"] == "AUTHORIZATION"
+    assert result["root_cause"] == (
+        "User lacks required permission"
+    )
+    assert len(result["suggested_fixes"]) > 0

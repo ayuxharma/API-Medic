@@ -74,6 +74,34 @@ class EvidenceMatcher:
             "message": "Unhandled-exception wording was found",
             "weight": 0.20,
         },
+        {
+            "pattern": (
+                r"permission.*(denied|missing|required|insufficient)"
+                r"|(?:denied|missing|insufficient).*permission"
+                r"|access denied"
+            ),
+    "cause": "User lacks required permission",
+    "message": "Permission-denial wording was found",
+    "weight": 0.30,
+},
+{
+    "pattern": (
+        r"insufficient.*scope"
+        r"|scope.*(missing|required|insufficient)"
+    ),
+    "cause": "Token has insufficient scope",
+    "message": "Insufficient token-scope wording was found",
+    "weight": 0.30,
+},
+{
+    "pattern": (
+        r"role.*(required|forbidden|denied|not allowed)"
+        r"|(?:required|forbidden).*role"
+    ),
+    "cause": "User role is not allowed for this resource",
+    "message": "Role-based access wording was found",
+    "weight": 0.30,
+},
     ]
 
     def match(self, state: AgentState) -> AgentState:
@@ -90,6 +118,15 @@ class EvidenceMatcher:
             Hypothesis.from_dict(data)
             for data in state.get("hypotheses", [])
         ]
+        
+        available_causes = {
+            hypothesis.cause
+            for hypothesis in hypotheses
+        }
+        
+        for rule in self.EVIDENCE_RULES:
+            if rule["cause"] not in available_causes:
+                continue
 
         for rule in self.EVIDENCE_RULES:
             evidence_found = re.search(

@@ -57,6 +57,28 @@ def test_undefined_variable_pipeline():
     assert result["root_cause"] == (
         "Undefined variable or method call"
     )
+    
+def test_permission_denied_pipeline() -> None:
+    state = create_state(
+        403,
+        "Permission denied for this resource",
+    )
+
+    result = run_pipeline(state)
+
+    assert result["failure_type"] == "AUTHORIZATION"
+    assert result["root_cause"] == (
+        "User lacks required permission"
+    )
+    assert result["confidence_score"] >= 0.8
+    assert len(result["suggested_fixes"]) > 0
+
+    primary = result["hypotheses"][0]
+
+    assert primary["cause"] == (
+        "User lacks required permission"
+    )
+    assert len(primary["supporting_evidence"]) > 0
 
 
 def test_unknown_error_pipeline():
