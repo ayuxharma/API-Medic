@@ -114,5 +114,7 @@ class DiagnosisResponse(BaseModel):
     ]
     routing_reason: str
     llm_used: bool
+    llm_explanation: str
+    llm_status_message: str
 
     suggested_fixes: list[str]

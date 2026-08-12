@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -6,15 +7,30 @@ from fastapi import (
     File,
     Form,
     Request,
+    Response,
     UploadFile,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+)
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
+from starlette.middleware.base import (
+    RequestResponseEndpoint,
+)
 
 from agent.input_parser import FileInputParser
-from web.schemas import DiagnosisRequest, DiagnosisResponse
+from agent.logging_config import configure_logging
+from web.schemas import (
+    DiagnosisRequest,
+    DiagnosisResponse,
+)
 from web.services import run_diagnosis
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
 
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
 TEMPLATES_DIRECTORY = BASE_DIRECTORY / "templates"
@@ -38,11 +54,43 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def handle_unexpected_errors(
+    request: Request,
+    call_next: RequestResponseEndpoint,
+) -> Response:
+    """
+    Convert unexpected exceptions into a safe HTTP response.
+
+    Expected validation errors are still handled normally by
+    FastAPI and the individual routes.
+    """
+
+    try:
+        return await call_next(request)
+    except Exception as error:
+        # Log safe metadata without exposing the exception message.
+        logger.error(
+            "event=unhandled_web_error method=%s path=%s error_type=%s",
+            request.method,
+            request.url.path,
+            type(error).__name__,
+        )
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": ("An unexpected internal error occurred."),
+            },
+        )
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request) -> HTMLResponse:
     """
     Display the browser-based debugging form.
     """
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -57,6 +105,7 @@ def health_check() -> dict[str, str]:
     """
     Confirm that the web application is running.
     """
+
     return {
         "status": "healthy",
     }
@@ -72,13 +121,20 @@ def diagnose_api_failure(
     """
     Accept JSON data and return a JSON diagnosis.
     """
+
     return run_diagnosis(payload)
 
 
-@app.post("/diagnose", response_class=HTMLResponse)
+@app.post(
+    "/diagnose",
+    response_class=HTMLResponse,
+)
 def diagnose_from_form(
     request: Request,
-    payload: Annotated[DiagnosisRequest, Form()],
+    payload: Annotated[
+        DiagnosisRequest,
+        Form(),
+    ],
 ) -> HTMLResponse:
     """
     Accept manually entered form data and display the result.
@@ -103,11 +159,11 @@ async def diagnose_from_uploaded_file(
     request: Request,
     file: Annotated[
         UploadFile,
-        File(description="Structured API error text file"),
+        File(description=("Structured API error text file")),
     ],
 ) -> HTMLResponse:
     """
-    Parse an uploaded UTF-8 text file and display its diagnosis.
+    Parse an uploaded UTF-8 file and display its diagnosis.
     """
 
     try:
@@ -120,7 +176,7 @@ async def diagnose_from_uploaded_file(
             request=request,
             name="index.html",
             context={
-                "error": "Uploaded file must be 100 KB or smaller.",
+                "error": ("Uploaded file must be 100 KB or smaller."),
             },
             status_code=413,
         )
@@ -144,7 +200,10 @@ async def diagnose_from_uploaded_file(
             status_code=400,
         )
 
-    except (ValueError, ValidationError) as error:
+    except (
+        ValueError,
+        ValidationError,
+    ) as error:
         return templates.TemplateResponse(
             request=request,
             name="index.html",

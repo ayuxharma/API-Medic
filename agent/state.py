@@ -60,6 +60,8 @@ class AgentState(TypedDict, total=False):
     analysis_route: AnalysisRoute
     routing_reason: str
     llm_used: bool
+    llm_explanation: str
+    llm_status_message: str
 
     # Final output
     suggested_fixes: list[str]

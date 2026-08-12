@@ -1,3 +1,5 @@
+import logging
+
 from fastapi.testclient import TestClient
 
 from web.main import app
@@ -223,3 +225,47 @@ def test_api_diagnoses_database_deadlock() -> None:
     assert result["root_cause"] == ("Database deadlock occurred")
 
     assert len(result["suggested_fixes"]) > 0
+
+
+def test_unexpected_api_error_returns_safe_response(
+    monkeypatch,
+    caplog,
+) -> None:
+    """
+    Internal exceptions must not be exposed to clients.
+    """
+
+    sensitive_message = "database password is private-password"
+
+    caplog.set_level(
+        logging.ERROR,
+        logger="web.main",
+    )
+
+    def raise_unexpected_error(payload):
+        raise RuntimeError(sensitive_message)
+
+    monkeypatch.setattr(
+        "web.main.run_diagnosis",
+        raise_unexpected_error,
+    )
+
+    response = client.post(
+        "/api/diagnose",
+        json={
+            "status_code": 500,
+            "error_message": "Unexpected failure",
+        },
+    )
+
+    assert response.status_code == 500
+
+    assert response.json() == {
+        "detail": ("An unexpected internal error occurred."),
+    }
+
+    # Neither the HTTP response nor logs expose the secret.
+    assert sensitive_message not in response.text
+    assert sensitive_message not in caplog.text
+
+    assert "error_type=RuntimeError" in caplog.text
