@@ -1,0 +1,27 @@
+# Local virtual environment
+.venv/
+
+# Never include local secrets
+.env
+
+# Git files
+.git/
+.gitignore
+
+# Python-generated files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Development-tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Development-only files
+tests/
+requirements-dev.txt
+
+# Operating-system files
+.DS_Store
