@@ -8,7 +8,7 @@ API Medic is a hybrid API-failure diagnostic application. It uses deterministic 
 
 [OpenAPI documentation](https://api-medic-93ky.onrender.com/docs)
 
-The free Render instance may take about a minute to wake after a period of inactivity.
+The Render instance may take about a minute to wake after a period of inactivity.
 
 ## Key Features
 
