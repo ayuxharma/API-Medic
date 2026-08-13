@@ -1,0 +1,126 @@
+name: Continuous Integration
+
+# Run CI when code reaches main or a pull request targets main.
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+# The workflow only needs permission to read repository files.
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Python quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # Tests must never make paid external LLM requests.
+      ENABLE_LLM_FALLBACK: "false"
+
+    steps:
+      # Download the repository onto the temporary runner.
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      # Install the same Python minor version used locally.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      # Install runtime and development dependencies.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      # Check whether files follow Ruff formatting rules.
+      - name: Check formatting
+        run: ruff format --check .
+
+      # Detect code-quality and import problems.
+      - name: Run linting
+        run: ruff check .
+
+      # Check static Python types.
+      - name: Run type checking
+        run: mypy
+
+      # Run every automated test.
+      - name: Run tests
+        run: pytest -v
+
+  docker:
+    name: Docker build and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Do not build the image if Python checks failed.
+    needs:
+      - quality
+
+    steps:
+      # Download the repository for the Docker job.
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      # Configure Docker's modern image builder.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Build the image but do not publish it anywhere.
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: api-debugger:ci
+
+      # Start the image created in the previous step.
+      - name: Start test container
+        run: |
+          docker run \
+            --detach \
+            --name api-debugger-ci \
+            --publish 8000:8000 \
+            api-debugger:ci
+
+      # Wait for FastAPI and verify that it becomes healthy.
+      - name: Check container health
+        run: |
+          for attempt in {1..20}; do
+            if curl \
+              --fail \
+              --silent \
+              http://127.0.0.1:8000/health
+            then
+              echo
+              echo "Container health check passed"
+              exit 0
+            fi
+
+            echo "Waiting for application: attempt ${attempt}"
+            sleep 1
+          done
+
+          echo "Application did not become healthy"
+          docker logs api-debugger-ci
+          exit 1
+
+      # Remove the container even if an earlier step fails.
+      - name: Clean up test container
+        if: always()
+        run: docker rm --force api-debugger-ci
