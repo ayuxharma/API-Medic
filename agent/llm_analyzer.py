@@ -14,7 +14,6 @@ from pydantic import (
 from .redactor import build_safe_analysis_context
 from .state import AgentState
 
-
 # Load local development variables from .env.
 load_dotenv()
 
