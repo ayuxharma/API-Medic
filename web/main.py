@@ -14,6 +14,7 @@ from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
 )
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.middleware.base import (
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
 TEMPLATES_DIRECTORY = BASE_DIRECTORY / "templates"
+STATIC_DIRECTORY = BASE_DIRECTORY / "static"
 
 MAX_UPLOAD_SIZE = 100_000
 
@@ -51,6 +53,13 @@ app = FastAPI(
         "ranks possible root causes, and suggests fixes."
     ),
     version="0.1.0",
+)
+
+# Make CSS files available through /static.
+app.mount(
+    "/static",
+    StaticFiles(directory=str(STATIC_DIRECTORY)),
+    name="static",
 )
 
 

@@ -269,3 +269,15 @@ def test_unexpected_api_error_returns_safe_response(
     assert sensitive_message not in caplog.text
 
     assert "error_type=RuntimeError" in caplog.text
+
+
+def test_stylesheet_is_served() -> None:
+    """
+    The browser must be able to load the shared stylesheet.
+    """
+
+    response = client.get("/static/styles.css")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/css")
+    assert "--background:" in response.text

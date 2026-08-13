@@ -2,82 +2,157 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-    <title>Diagnosis Result</title>
+
+    <title>API Diagnosis Result</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='/styles.css') }}"
+    >
 </head>
 
 <body>
-    <main>
-        <h1>API Diagnosis Result</h1>
+    <main class="container">
+        <header class="page-header">
+            <p class="eyebrow">Diagnosis complete</p>
 
-        <section>
-            <h2>Request details</h2>
+            <h1>API Diagnosis Result</h1>
 
-            <ul>
-                <li>Endpoint: {{ result.endpoint }}</li>
-                <li>Method: {{ result.method }}</li>
-
-                <li>
-                    Status code:
-                    {% if result.status_code is not none %}
-                        {{ result.status_code }}
-                    {% else %}
-                        Not provided
-                    {% endif %}
-                </li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>Failure category</h2>
-            <p>{{ result.failure_type }}</p>
-        </section>
-
-        <section>
-            <h2>Classification signals</h2>
-
-            {% if result.signals %}
-                <ul>
-                    {% for signal in result.signals %}
-                        <li>{{ signal }}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No classification signals were found.</p>
-            {% endif %}
-        </section>
-
-        <section>
-            <h2>Most likely root cause</h2>
-
-            <p>
-                <strong>{{ result.root_cause }}</strong>
+            <p class="lead">
+                The debugger analyzed the available evidence and ranked
+                the most likely causes.
             </p>
+        </header>
 
-            <p>
-                Evidence score:
-                {{ (result.confidence_score * 100) | round(0) }}%
-            </p>
-        </section>
+        <div class="result-grid">
+            <section class="panel">
+                <h2>Request details</h2>
 
-        <section>
-            <h2>Ranked hypotheses</h2>
-
-            <ol>
-                {% for hypothesis in result.hypotheses %}
+                <ul class="detail-list">
                     <li>
-                        <p>
+                        Endpoint:
+                        <strong>{{ result.endpoint }}</strong>
+                    </li>
+
+                    <li>
+                        Method:
+                        <strong>{{ result.method }}</strong>
+                    </li>
+
+                    <li>
+                        Status code:
+                        <strong>
+                            {% if result.status_code is not none %}
+                                {{ result.status_code }}
+                            {% else %}
+                                Not provided
+                            {% endif %}
+                        </strong>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="panel">
+                <h2>Failure category</h2>
+
+                <span class="badge">
+                    {{ result.failure_type }}
+                </span>
+            </section>
+
+            <section class="panel panel--highlight panel--wide">
+                <h2>Most likely root cause</h2>
+
+                <p class="root-cause">
+                    <strong>{{ result.root_cause }}</strong>
+                </p>
+
+                <div class="score-row">
+                    <span>Evidence confidence</span>
+
+                    <strong>
+                        {{ (result.confidence_score * 100) | round(0) }}%
+                    </strong>
+                </div>
+
+                <progress
+                    value="{{ result.confidence_score }}"
+                    max="1"
+                    aria-label="Diagnosis confidence"
+                >
+                    {{ result.confidence_score }}
+                </progress>
+            </section>
+
+            <section class="panel">
+                <h2>Analysis route</h2>
+
+                <p>
+                    <span class="badge">
+                        {{ result.analysis_route }}
+                    </span>
+                </p>
+
+                <p class="muted">
+                    {{ result.routing_reason }}
+                </p>
+
+                {% if result.llm_status_message %}
+                    <p class="muted">
+                        {{ result.llm_status_message }}
+                    </p>
+                {% endif %}
+
+                {% if result.llm_used and result.llm_explanation %}
+                    <p>
+                        {{ result.llm_explanation }}
+                    </p>
+                {% endif %}
+            </section>
+
+            <section class="panel">
+                <h2>Classification signals</h2>
+
+                {% if result.signals %}
+                    <ul class="detail-list">
+                        {% for signal in result.signals %}
+                            <li>{{ signal }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="muted">
+                        No classification signals were found.
+                    </p>
+                {% endif %}
+            </section>
+
+            <section class="panel panel--wide">
+                <h2>Ranked hypotheses</h2>
+
+                {% for hypothesis in result.hypotheses %}
+                    <article class="hypothesis">
+                        <p class="hypothesis-title">
                             <strong>{{ hypothesis.cause }}</strong>
-                            — score: {{ hypothesis.score }}
+                            — score:
+                            {{ hypothesis.score | round(2) }}
                         </p>
 
                         {% if hypothesis.supporting_evidence %}
-                            <p>Supporting evidence:</p>
+                            <p class="evidence-label">
+                                Supporting evidence
+                            </p>
 
-                            <ul>
+                            <ul
+                                class="
+                                    detail-list
+                                    evidence--supporting
+                                "
+                            >
                                 {% for evidence in hypothesis.supporting_evidence %}
                                     <li>{{ evidence }}</li>
                                 {% endfor %}
@@ -85,50 +160,70 @@
                         {% endif %}
 
                         {% if hypothesis.weakening_evidence %}
-                            <p>Weakening evidence:</p>
+                            <p class="evidence-label">
+                                Weakening evidence
+                            </p>
 
-                            <ul>
+                            <ul
+                                class="
+                                    detail-list
+                                    evidence--weakening
+                                "
+                            >
                                 {% for evidence in hypothesis.weakening_evidence %}
                                     <li>{{ evidence }}</li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
-                    </li>
+                    </article>
                 {% endfor %}
-            </ol>
-        </section>
+            </section>
 
-        <section>
-            <h2>Alternative causes</h2>
+            <section class="panel">
+                <h2>Alternative causes</h2>
 
-            {% if result.alternative_causes %}
-                <ul>
-                    {% for alternative in result.alternative_causes %}
-                        <li>
-                            {{ alternative.cause }}
-                            — score: {{ alternative.score }},
-                            relative share: {{ alternative.relative_share }}%
-                        </li>
+                {% if result.alternative_causes %}
+                    <ul class="detail-list">
+                        {% for alternative in result.alternative_causes %}
+                            <li>
+                                {{ alternative.cause }}
+                                — score:
+                                {{ alternative.score | round(2) }}
+                                — relative share:
+                                {{ alternative.relative_share }}%
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="muted">
+                        No alternative causes are available.
+                    </p>
+                {% endif %}
+            </section>
+
+            <section class="panel">
+                <h2>Suggested fixes</h2>
+
+                <ol class="detail-list">
+                    {% for fix in result.suggested_fixes %}
+                        <li>{{ fix }}</li>
                     {% endfor %}
-                </ul>
-            {% else %}
-                <p>No alternative causes are available.</p>
-            {% endif %}
-        </section>
+                </ol>
+            </section>
+        </div>
 
-        <section>
-            <h2>Suggested fixes</h2>
+        <div class="actions footer-actions">
+            <a class="button-link" href="/">
+                Analyze another failure
+            </a>
 
-            <ol>
-                {% for fix in result.suggested_fixes %}
-                    <li>{{ fix }}</li>
-                {% endfor %}
-            </ol>
-        </section>
-
-        <p>
-            <a href="/">Analyze another failure</a>
-        </p>
+            <a
+                class="button-link button-link--secondary"
+                href="/docs"
+            >
+                API documentation
+            </a>
+        </div>
     </main>
 </body>
 </html>

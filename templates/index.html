@@ -8,165 +8,187 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta
+        name="description"
+        content="Analyze API failures and receive ranked root causes."
+    >
+
     <title>API Failure Debugger</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='/styles.css') }}"
+    >
 </head>
 
 <body>
-    <main>
-        <h1>API Failure Debugger</h1>
+    <main class="container">
+        <header class="page-header">
+            <p class="eyebrow">Developer diagnostics</p>
 
-        <p>
-            Enter an API failure manually or upload a structured
-            error file.
-        </p>
+            <h1>API Failure Debugger</h1>
+
+            <p class="lead">
+                Enter an API failure manually or upload a structured
+                error file to receive ranked root causes and fixes.
+            </p>
+        </header>
 
         {% if error %}
-            <section role="alert">
+            <section class="alert" role="alert">
                 <h2>Input error</h2>
                 <p>{{ error }}</p>
             </section>
         {% endif %}
 
-        <section>
-            <h2>Enter failure manually</h2>
+        <div class="page-grid">
+            <section class="panel panel--highlight">
+                <h2>Enter failure manually</h2>
 
-            <form action="/diagnose" method="post">
-                <div>
-                    <label for="endpoint">API endpoint</label>
+                <p class="panel-description">
+                    Provide the information returned by the failing API.
+                </p>
 
-                    <input
-                        id="endpoint"
-                        name="endpoint"
-                        type="text"
-                        placeholder="/api/login"
-                        value="Not provided"
-                    >
-                </div>
+                <form action="/diagnose" method="post">
+                    <div class="form-grid">
+                        <div class="field field--wide">
+                            <label for="endpoint">
+                                API endpoint
+                            </label>
 
-                <br>
+                            <input
+                                id="endpoint"
+                                name="endpoint"
+                                type="text"
+                                placeholder="/api/login"
+                                value="Not provided"
+                            >
+                        </div>
 
-                <div>
-                    <label for="method">HTTP method</label>
+                        <div class="field">
+                            <label for="method">
+                                HTTP method
+                            </label>
 
-                    <select id="method" name="method">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="PATCH">PATCH</option>
-                        <option value="DELETE">DELETE</option>
-                    </select>
-                </div>
+                            <select id="method" name="method">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="DELETE">DELETE</option>
+                            </select>
+                        </div>
 
-                <br>
+                        <div class="field">
+                            <label for="status_code">
+                                HTTP status code
+                            </label>
 
-                <div>
-                    <label for="status_code">
-                        HTTP status code
-                    </label>
+                            <input
+                                id="status_code"
+                                name="status_code"
+                                type="number"
+                                min="100"
+                                max="599"
+                                placeholder="401"
+                            >
+                        </div>
 
-                    <input
-                        id="status_code"
-                        name="status_code"
-                        type="number"
-                        min="100"
-                        max="599"
-                        placeholder="401"
-                    >
-                </div>
+                        <div class="field field--wide">
+                            <label for="error_message">
+                                Error message
+                            </label>
 
-                <br>
+                            <textarea
+                                id="error_message"
+                                name="error_message"
+                                rows="5"
+                                maxlength="10000"
+                                placeholder="JWT token expired"
+                                required
+                            ></textarea>
+                        </div>
 
-                <div>
-                    <label for="error_message">
-                        Error message
-                    </label>
+                        <div class="field field--wide">
+                            <label for="stack_trace">
+                                Stack trace (optional)
+                            </label>
 
-                    <br>
+                            <textarea
+                                id="stack_trace"
+                                name="stack_trace"
+                                rows="9"
+                                maxlength="50000"
+                                placeholder="Paste the stack trace here"
+                            ></textarea>
+                        </div>
+                    </div>
 
-                    <textarea
-                        id="error_message"
-                        name="error_message"
-                        rows="5"
-                        cols="70"
-                        maxlength="10000"
-                        placeholder="JWT token expired"
-                        required
-                    ></textarea>
-                </div>
+                    <div class="actions">
+                        <button type="submit">
+                            Analyze failure
+                        </button>
+                    </div>
+                </form>
+            </section>
 
-                <br>
+            <aside>
+                <section class="panel">
+                    <h2>Upload an error file</h2>
 
-                <div>
-                    <label for="stack_trace">
-                        Stack trace (optional)
-                    </label>
+                    <p class="panel-description">
+                        Upload a UTF-8 text file of up to 100 KB.
+                    </p>
 
-                    <br>
-
-                    <textarea
-                        id="stack_trace"
-                        name="stack_trace"
-                        rows="10"
-                        cols="70"
-                        maxlength="50000"
-                        placeholder="Paste the stack trace here"
-                    ></textarea>
-                </div>
-
-                <br>
-
-                <button type="submit">
-                    Analyze failure
-                </button>
-            </form>
-        </section>
-
-        <hr>
-
-        <section>
-            <h2>Upload a structured error file</h2>
-
-            <p>The text file should use this format:</p>
-
-            <pre>Endpoint: /api/login
+                    <pre>Endpoint: /api/login
 Method: POST
 Status Code: 401
 Error Message:
 JWT token expired
 Stack Trace:</pre>
 
-            <form
-                action="/diagnose/upload"
-                method="post"
-                enctype="multipart/form-data"
-            >
-                <label for="file">Error file</label>
+                    <form
+                        action="/diagnose/upload"
+                        method="post"
+                        enctype="multipart/form-data"
+                    >
+                        <div class="field">
+                            <label for="file">
+                                Structured error file
+                            </label>
 
-                <input
-                    id="file"
-                    name="file"
-                    type="file"
-                    accept=".txt,text/plain"
-                    required
-                >
+                            <input
+                                id="file"
+                                name="file"
+                                type="file"
+                                accept=".txt,text/plain"
+                                required
+                            >
+                        </div>
 
-                <button type="submit">
-                    Upload and analyze
-                </button>
-            </form>
-        </section>
+                        <div class="actions">
+                            <button type="submit">
+                                Upload and analyze
+                            </button>
+                        </div>
+                    </form>
+                </section>
 
-        <hr>
+                <section class="security-note">
+                    Remove passwords, tokens, API keys, cookies, and
+                    other secrets before submitting information.
+                </section>
 
-        <p>
-            Remove passwords, tokens, API keys, cookies, and other
-            secrets before submitting any information.
-        </p>
-
-        <p>
-            Developers can also use the
-            <a href="/docs">JSON API documentation</a>.
-        </p>
+                <div class="actions">
+                    <a
+                        class="button-link button-link--secondary"
+                        href="/docs"
+                    >
+                        Open API documentation
+                    </a>
+                </div>
+            </aside>
+        </div>
     </main>
 </body>
 </html>

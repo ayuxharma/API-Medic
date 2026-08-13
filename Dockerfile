@@ -24,6 +24,7 @@ RUN python -m pip install \
 COPY agent ./agent
 COPY web ./web
 COPY templates ./templates
+COPY static ./static
 COPY app.py .
 
 # Create a normal user instead of running as root.
