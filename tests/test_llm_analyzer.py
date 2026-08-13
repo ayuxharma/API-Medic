@@ -1,7 +1,10 @@
 import pytest
 from pydantic import ValidationError
 
-from agent.llm_analyzer import LLMAnalysis
+from agent.llm_analyzer import (
+    LLMAnalysis,
+    LLMAnalyzer,
+)
 
 
 def test_llm_analysis_accepts_valid_result() -> None:
@@ -47,3 +50,66 @@ def test_llm_analysis_rejects_empty_fixes() -> None:
             confidence_score=0.5,
             suggested_fixes=[],
         )
+
+
+def test_analyzer_is_unavailable_when_disabled(
+    monkeypatch,
+) -> None:
+    """
+    A configured key must not override the feature flag.
+    """
+
+    monkeypatch.setenv(
+        "ENABLE_LLM_FALLBACK",
+        "false",
+    )
+    monkeypatch.setenv(
+        "GEMINI_API_KEY",
+        "test-key",
+    )
+
+    analyzer = LLMAnalyzer()
+
+    assert analyzer.is_available() is False
+
+
+def test_analyzer_is_unavailable_without_key(
+    monkeypatch,
+) -> None:
+    """
+    Enabled fallback still requires a Gemini key.
+    """
+
+    monkeypatch.setenv(
+        "ENABLE_LLM_FALLBACK",
+        "true",
+    )
+    monkeypatch.delenv(
+        "GEMINI_API_KEY",
+        raising=False,
+    )
+
+    analyzer = LLMAnalyzer()
+
+    assert analyzer.is_available() is False
+
+
+def test_analyzer_is_available_with_gemini_key(
+    monkeypatch,
+) -> None:
+    """
+    Enabled fallback and a Gemini key allow analysis.
+    """
+
+    monkeypatch.setenv(
+        "ENABLE_LLM_FALLBACK",
+        "true",
+    )
+    monkeypatch.setenv(
+        "GEMINI_API_KEY",
+        "test-key",
+    )
+
+    analyzer = LLMAnalyzer()
+
+    assert analyzer.is_available() is True

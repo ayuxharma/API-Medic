@@ -14,8 +14,13 @@ from pydantic import (
 from .redactor import build_safe_analysis_context
 from .state import AgentState
 
+
 # Load local development variables from .env.
 load_dotenv()
+
+
+# Google provides an OpenAI-compatible Gemini endpoint.
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
 class LLMAnalysisError(RuntimeError):
@@ -26,11 +31,13 @@ class LLMAnalysisError(RuntimeError):
 
 class LLMAnalysis(BaseModel):
     """
-    Validated diagnosis returned by the OpenAI model.
+    Validated diagnosis returned by Gemini.
     """
 
     # Reject unexpected fields returned by the model.
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     root_cause: str = Field(
         min_length=1,
@@ -57,7 +64,10 @@ class LLMAnalysis(BaseModel):
         "explanation",
     )
     @classmethod
-    def reject_blank_text(cls, value: str) -> str:
+    def reject_blank_text(
+        cls,
+        value: str,
+    ) -> str:
         """
         Reject values containing only whitespace.
         """
@@ -76,7 +86,7 @@ class LLMAnalysis(BaseModel):
         fixes: list[str],
     ) -> list[str]:
         """
-        Reject empty or whitespace-only fix suggestions.
+        Reject empty or whitespace-only fixes.
         """
 
         cleaned_fixes = [fix.strip() for fix in fixes]
@@ -105,12 +115,17 @@ Keep the response concise and useful to a software engineer.
 """.strip()
 
 
-def _environment_flag_is_enabled(name: str) -> bool:
+def _environment_flag_is_enabled(
+    name: str,
+) -> bool:
     """
     Convert an environment variable into a boolean.
     """
 
-    value = os.getenv(name, "false")
+    value = os.getenv(
+        name,
+        "false",
+    )
 
     return value.strip().lower() in {
         "1",
@@ -122,7 +137,7 @@ def _environment_flag_is_enabled(name: str) -> bool:
 
 class LLMAnalyzer:
     """
-    Run one structured OpenAI analysis for weak results.
+    Run one structured Gemini analysis for weak results.
     """
 
     def __init__(
@@ -130,14 +145,14 @@ class LLMAnalyzer:
         client: OpenAI | None = None,
     ) -> None:
         """
-        Allow an OpenAI client to be injected in tests.
+        Allow a compatible client to be injected in tests.
         """
 
         self._client = client
 
     def is_available(self) -> bool:
         """
-        Check whether LLM fallback is enabled and configured.
+        Check whether Gemini fallback is enabled and configured.
         """
 
         if not _environment_flag_is_enabled("ENABLE_LLM_FALLBACK"):
@@ -147,14 +162,33 @@ class LLMAnalyzer:
         if self._client is not None:
             return True
 
-        return bool(os.getenv("OPENAI_API_KEY"))
+        return bool(os.getenv("GEMINI_API_KEY"))
+
+    def _create_client(self) -> OpenAI:
+        """
+        Create a client targeting Google's Gemini endpoint.
+        """
+
+        api_key = os.getenv("GEMINI_API_KEY")
+
+        if not api_key:
+            raise LLMAnalysisError("Gemini API key is not configured")
+
+        return OpenAI(
+            api_key=api_key,
+            base_url=GEMINI_BASE_URL,
+            # Do not make a user wait indefinitely.
+            timeout=15.0,
+            # Preserve deterministic fallback on failure.
+            max_retries=0,
+        )
 
     def analyze(
         self,
         state: AgentState,
     ) -> LLMAnalysis | None:
         """
-        Analyze sanitized data using one OpenAI request.
+        Analyze sanitized data using one Gemini request.
 
         Returns None when LLM fallback is disabled.
         Raises LLMAnalysisError when an enabled call fails.
@@ -163,46 +197,49 @@ class LLMAnalyzer:
         if not self.is_available():
             return None
 
-        client = self._client
-
-        if client is None:
-            client = OpenAI(
-                # Keep web and CLI requests from waiting indefinitely.
-                timeout=10.0,
-                # Use deterministic fallback instead of retrying.
-                max_retries=0,
-            )
+        client = self._client if self._client is not None else self._create_client()
 
         safe_context = build_safe_analysis_context(state)
 
-        # Only sanitized data crosses the external boundary.
+        # Only sanitized information crosses
+        # the external API boundary.
         user_input = json.dumps(
             safe_context,
             indent=2,
         )
 
         try:
-            response = client.responses.parse(
+            completion = client.beta.chat.completions.parse(
                 model=os.getenv(
-                    "OPENAI_MODEL",
-                    "gpt-5.4-mini",
+                    "GEMINI_MODEL",
+                    "gemini-3.1-flash-lite",
                 ),
-                instructions=_SYSTEM_INSTRUCTIONS,
-                input=user_input,
-                text_format=LLMAnalysis,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (_SYSTEM_INSTRUCTIONS),
+                    },
+                    {
+                        "role": "user",
+                        "content": user_input,
+                    },
+                ],
+                response_format=LLMAnalysis,
             )
+
+            analysis = completion.choices[0].message.parsed
+
         except (
             APIError,
             ValidationError,
             ValueError,
+            IndexError,
         ) as error:
-            # Hide provider details from the application response.
-            raise LLMAnalysisError("LLM analysis could not be completed") from error
+            # Do not expose provider response details
+            # through the UI.
+            raise LLMAnalysisError("Gemini analysis could not be completed") from error
 
-        analysis = response.output_parsed
-
-        # A refusal or missing structured result may produce no object.
         if analysis is None:
-            raise LLMAnalysisError("LLM returned no usable structured diagnosis")
+            raise LLMAnalysisError("Gemini returned no usable structured diagnosis")
 
         return analysis

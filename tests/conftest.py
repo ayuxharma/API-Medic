@@ -6,7 +6,7 @@ def disable_live_llm(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
-    Prevent every test from making a real paid API request.
+    Prevent tests from making real external LLM requests.
     """
 
     monkeypatch.setenv(
